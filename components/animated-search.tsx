@@ -158,7 +158,7 @@ export function AnimatedSearch() {
                         </div>
                         <div className="flex flex-col">
                           <div className="text-xs uppercase text-gray-500">
-                            {product.category || "POSTERIZED"}
+                            {product.category || "POSTERED"}
                           </div>
                           <Link href={`/product/${product.id}`} className="font-medium hover:underline"><h4 className="font-medium">{product.title}</h4></Link>
                           <div className="mt-auto flex gap-2">

@@ -10,6 +10,9 @@ import { ShoppingCart, UserRound } from "lucide-react"
 import Link from "next/link"
 import MobileMenu from "@/components/mobile-menu"
 import Footer from "@/components/footer"
+import DropdownProducts from "@/components/dropdown"
+import RelatedProducts from "@/components/related-prodUCts"
+
 
 // Define the Product type
 type Product = {
@@ -50,6 +53,7 @@ export default function ProductPage() {
 
   if (loading) return <div>Loading...</div>
   if (!product) return <div>Product not found</div>
+  console.log("Description is: ", product.description)
 
   return (
     <div className="container mx-auto px-4">
@@ -113,16 +117,8 @@ export default function ProductPage() {
           </p>
           
 
-
-          {/* Quantity Selector */}
-          <div className="flex items-center space-x-4 mt-4">
-            <Button onClick={() => setQuantity(Math.max(1, quantity - 1))}>-</Button>
-            <span className="text-xl font-bold">{quantity}</span>
-            <Button onClick={() => setQuantity(quantity + 1)}>+</Button>
-          </div>
+          
           {/* Ratings and Reviews */}
-          
-          
           <p className="mt-4 text-2xl font-light ">
             <span className="text-xl line-through text-gray-600">
                 ₹{((product.price)+product.price*0.4).toFixed(2)}
@@ -131,21 +127,41 @@ export default function ProductPage() {
                 <span className="text-xl bg-black text-white p-2 px-3 border rounded-full">
                     Sale
                 </span>
-          </p> 
+                
+          </p>
+
+          <div className="text-sm mt-3">Taxes included. Shipping calculated at checkout.</div>
+
+          <div className="pt-5">
+          Size:
+          <span className="text-md bg-black text-white p-1 px-3 border rounded-full ml-2 mt-3">
+                    A4
+                </span>
+            </div>
+
+        {/* Quantity Selector */}
+        <div className="flex items-center space-x-4 mt-4">
+            <Button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="bg-white text-black border border-black hover:bg-gray-200 rounded-sm">-</Button>
+            <span className="text-xl font-bold">{quantity}</span>
+            <Button onClick={() => setQuantity(quantity + 1)} className="bg-white text-black border border-black hover:bg-gray-200 rounded-sm">+</Button>
+          </div>
           
           {/* Combo Deals Section */}
           <div className="mt-4 text-sm text-gray-700">
-            <p>🔥 Premium Quality</p>
-            <p>💧 Water Resistant </p>
-            <p>🔥 Buy 3 Sets Get 5 Free (Add 8 Sets to Cart)</p>
+            <p>🔥 High-resolution print with rich, true-to-life colors</p>
+            <p>💧 Printed on durable, gallery-grade waterproof paper </p>
+            <p>🎁 Perfect for gifting or personal decor</p>
           </div>
           
           <Button className="mt-6 w-full font-bold">Add to Cart</Button>
           <Button className="mt-2 w-full font-bold">Buy Now</Button>
 
-          <p className="mt-4 text-lg py-2">{product.description}</p>
         </div>
       </div>
+
+          <div className="mt-5"><DropdownProducts description={product.description} /></div>
+
+          <div className="mb-8"><RelatedProducts category={product.category} /></div>
 
       <Footer />
     </div>
