@@ -9,6 +9,7 @@ import { AnimatedSearch } from "@/components/animated-search"
 import { ShoppingCart, UserRound } from "lucide-react"
 import Link from "next/link"
 import MobileMenu from "@/components/mobile-menu"
+import Footer from "@/components/footer"
 
 // Define the Product type
 type Product = {
@@ -110,7 +111,7 @@ export default function ProductPage() {
           <p className="mt-2 text-lg flex items-center">
             <span className="text-yellow-500">⭐ {product.rating.toFixed(1)}</span> / 5 &bull; {product.reviews}+ Reviews
           </p>
-          <p className="mt-4 text-lg">{product.description}</p>
+          
 
 
           {/* Quantity Selector */}
@@ -141,8 +142,12 @@ export default function ProductPage() {
           
           <Button className="mt-6 w-full font-bold">Add to Cart</Button>
           <Button className="mt-2 w-full font-bold">Buy Now</Button>
+
+          <p className="mt-4 text-lg py-2">{product.description}</p>
         </div>
       </div>
+
+      <Footer />
     </div>
   )
 }
