@@ -12,6 +12,8 @@ type CartItem = {
 // Define store state and actions
 type CartState = {
   cart: CartItem[]
+  isCartOpen: boolean // Track cart visibility
+  toggleCart: () => void
   addToCart: (item: CartItem) => void
   removeFromCart: (id: string) => void
   clearCart: () => void
@@ -22,6 +24,9 @@ export const useCartStore = create<CartState>()(
   persist(
     (set, get) => ({
       cart: [],
+      isCartOpen: false, // Cart is initially closed
+      toggleCart: () => set((state) => ({ isCartOpen: !state.isCartOpen })),
+
       addToCart: (item) => {
         const updatedCart = [...get().cart]
         const existingItemIndex = updatedCart.findIndex((cartItem) => cartItem.id === item.id)
@@ -40,8 +45,8 @@ export const useCartStore = create<CartState>()(
       clearCart: () => set({ cart: [] }),
     }),
     {
-      name: "cart-storage", // Key for localStorage
-      storage: createJSONStorage(() => localStorage), // Use localStorage
+      name: "cart-storage",
+      storage: createJSONStorage(() => localStorage),
     }
   )
 )
