@@ -105,7 +105,7 @@ export default function ProductPage() {
         </div>
 
         <div>
-          <h1 className="text-3xl font-bold">{product.title}</h1>
+          <h1 className="text-4xl font-light">{product.title}</h1>
           <p className="text-gray-500 mt-2">{product.category}</p>
           <p className="mt-2 text-lg flex items-center">
             <span className="text-yellow-500">⭐ {product.rating.toFixed(1)}</span> / 5 &bull; {product.reviews}+ Reviews
@@ -122,12 +122,20 @@ export default function ProductPage() {
           {/* Ratings and Reviews */}
           
           
-          <p className="mt-4 text-2xl font-semibold">₹{product.price.toFixed(2)}</p>
+          <p className="mt-4 text-2xl font-light ">
+            <span className="text-xl line-through text-gray-600">
+                ₹{((product.price)+product.price*0.4).toFixed(2)}
+                </span> 
+                <span className="mx-3">₹{product.price.toFixed(2)}</span>
+                <span className="text-xl bg-black text-white p-2 px-3 border rounded-full">
+                    Sale
+                </span>
+          </p> 
           
           {/* Combo Deals Section */}
           <div className="mt-4 text-sm text-gray-700">
-            <p>🔥 Buy 1 Set Get 1 Free (Add 2 to Cart)</p>
-            <p>🔥 Buy 2 Sets Get 3 Free (Add 5 Sets to Cart) <span className="text-red-500">Best Value - Limited Time Offer!</span></p>
+            <p>🔥 Premium Quality</p>
+            <p>💧 Water Resistant </p>
             <p>🔥 Buy 3 Sets Get 5 Free (Add 8 Sets to Cart)</p>
           </div>
           
