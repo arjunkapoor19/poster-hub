@@ -32,7 +32,7 @@ export default function LatestDropsCarousel() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const { data: fetchedData, error } = await supabase.from("latest-drops").select("*")
+        const { data: fetchedData, error } = await supabase.from("products").select("*").eq("latest",true)
         if (error) {
           console.error("Error fetching data:", error)
         } else {

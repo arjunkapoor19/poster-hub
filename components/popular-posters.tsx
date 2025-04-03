@@ -21,7 +21,7 @@ export default function PopularPosters() {
     useEffect(() => {
         const fetchData = async () => {
           try {
-            const { data: fetchedData, error } = await supabase.from("popular-posters").select("*")
+            const { data: fetchedData, error } = await supabase.from("products").select("*").eq("popular", true)
             console.log("Fetched data is: ", fetchedData)
             if (error) {
               console.error("Error fetching data:", error)

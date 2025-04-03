@@ -3,9 +3,8 @@
 import { useState, useRef, useEffect } from "react"
 import { Search, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { createClient } from "@supabase/supabase-js"
 import Image from "next/image"
-import { Console } from "console"
+
 
 import {supabase} from "../lib/supabase"
 import Link from "next/link"
