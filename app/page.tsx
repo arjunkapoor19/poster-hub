@@ -8,7 +8,7 @@ import LatestDropsCarousel from "@/components/latest-drops-carousel"
 import FeaturedCollections from "@/components/featured-collections"
 import PopularPosters from "@/components/popular-posters"
 import Footer from "@/components/footer"
-import { AnimatedSearch } from "@/components/AnimatedSearch"
+import { AnimatedSearch } from "@/components/animated-search"
 
 export default function Home() {
   return (

@@ -8,6 +8,7 @@ import Image from "next/image"
 import { Console } from "console"
 
 import {supabase} from "../lib/supabase"
+import Link from "next/link"
 
 type Product = {
   id: number
@@ -159,7 +160,7 @@ export function AnimatedSearch() {
                           <div className="text-xs uppercase text-gray-500">
                             {product.category || "POSTERIZED"}
                           </div>
-                          <h4 className="font-medium">{product.title}</h4>
+                          <Link href={`/product/${product.id}`} className="font-medium hover:underline"><h4 className="font-medium">{product.title}</h4></Link>
                           <div className="mt-auto flex gap-2">
                             {product.price && product.price !== product.price && (
                               <span className="line-through text-gray-500">
