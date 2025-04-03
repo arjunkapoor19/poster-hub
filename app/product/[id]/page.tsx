@@ -11,7 +11,7 @@ import Link from "next/link"
 import MobileMenu from "@/components/mobile-menu"
 import Footer from "@/components/footer"
 import DropdownProducts from "@/components/dropdown"
-import RelatedProducts from "@/components/related-prodUCts"
+import RelatedProducts from "@/components/related-products"
 
 
 // Define the Product type
