@@ -5,14 +5,11 @@ import { useParams } from "next/navigation"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { supabase } from "@/lib/supabase"
-import { AnimatedSearch } from "@/components/animated-search"
-import { ShoppingCart, UserRound } from "lucide-react"
-import Link from "next/link"
-import MobileMenu from "@/components/mobile-menu"
 import Footer from "@/components/footer"
 import DropdownProducts from "@/components/dropdown"
 import RelatedProducts from "@/components/related-products"
 import Header from "@/components/header"
+import { useCartStore } from "@/store/cartStore"
 
 
 // Define the Product type
@@ -32,6 +29,7 @@ export default function ProductPage() {
   const [product, setProduct] = useState<Product | null>(null)
   const [loading, setLoading] = useState(true)
   const [quantity, setQuantity] = useState(1)
+  const addToCart = useCartStore((state) => state.addToCart)
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -121,8 +119,7 @@ export default function ProductPage() {
             <p>🎁 Perfect for gifting or personal decor</p>
           </div>
           
-          <Button className="mt-6 w-full font-bold">Add to Cart</Button>
-          <Button className="mt-2 w-full font-bold">Buy Now</Button>
+          <Button className="mt-6 w-full font-bold" onClick={() => addToCart({ id: product.id, name: product.title, price: product.price, quantity: 1 })}>Add to Cart</Button>
 
         </div>
       </div>

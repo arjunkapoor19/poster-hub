@@ -11,6 +11,7 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { useMobile } from "@/hooks/use-mobile"
 
 import { supabase } from "../lib/supabase"
+import { useCartStore } from "@/store/cartStore"
 
 // Define the Poster type
 type Poster = {
@@ -25,6 +26,7 @@ export default function LatestDropsCarousel() {
   const [currentIndex, setCurrentIndex] = useState(0)
   const carouselRef = useRef<HTMLDivElement>(null)
   const isMobile = useMobile()
+  const addToCart = useCartStore((state) => state.addToCart)
 
   const itemsPerView = isMobile ? 2 : 4
   const maxIndex = data.length - itemsPerView
@@ -115,7 +117,9 @@ export default function LatestDropsCarousel() {
                     {poster.title}
                   </Link>
                   <p className="text-sm text-muted-foreground">₹{poster.price.toFixed(2)}</p>
-                  <Button className="flex flex-grow-1 mt-6 w-full font-bold">Add to Cart</Button>
+                  <Button className="flex flex-grow-1 mt-6 w-full font-bold" onClick={() => addToCart({ id: poster.id, name: poster.title, price: poster.price, quantity: 1 })}>
+                    Add to Cart
+                    </Button>
                 </CardFooter>
               </Card>
             </div>

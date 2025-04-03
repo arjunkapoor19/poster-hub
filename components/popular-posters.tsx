@@ -7,6 +7,7 @@ import { Button } from "./ui/button"
 
 import { useEffect, useState } from "react"
 import { supabase } from "../lib/supabase"
+import { useCartStore } from "@/store/cartStore"
 
 type Poster = {
     id: string
@@ -17,6 +18,7 @@ type Poster = {
 
 export default function PopularPosters() {
     const [data, setData] = useState<Poster[]>([])
+    const addToCart = useCartStore((state) => state.addToCart)
 
     useEffect(() => {
         const fetchData = async () => {
@@ -56,7 +58,7 @@ export default function PopularPosters() {
               {poster.title}
             </Link>
             <p className="text-sm text-muted-foreground">₹{poster.price.toFixed(2)}</p>
-            <Button className="flex flex-grow-1 mt-6 w-full font-bold">Add to Cart</Button>
+            <Button className="flex flex-grow-1 mt-6 w-full font-bold" onClick={() => addToCart({ id: poster.id, name: poster.title, price: poster.price, quantity: 1 })}>Add to Cart</Button>
           </CardFooter>
         </Card>
       ))}
