@@ -28,21 +28,27 @@ export const useCartStore = create<CartState>()(
       isCartOpen: false, // Cart is initially closed
       toggleCart: () => set((state) => ({ isCartOpen: !state.isCartOpen })),
 
-      addToCart: (item) => {
-        const updatedCart = [...get().cart]
-        const existingItemIndex = updatedCart.findIndex((cartItem) => cartItem.id === item.id)
+      addToCart: (newItem) => {
+        set((state) => {
+          const updatedCart = [...state.cart]
+          const existingItemIndex = updatedCart.findIndex((item) => item.id === newItem.id)
 
-        if (existingItemIndex !== -1) {
-          updatedCart[existingItemIndex].quantity += 1
-        } else {
-          updatedCart.push(item)
-        }
+          if (existingItemIndex !== -1) {
+            // ✅ Increase the quantity correctly
+            updatedCart[existingItemIndex].quantity += newItem.quantity
+          } else {
+            // ✅ Add the item if it's not in the cart
+            updatedCart.push(newItem)
+          }
 
-        set({ cart: updatedCart })
+          return { cart: updatedCart }
+        })
       },
+
       removeFromCart: (id) => {
         set({ cart: get().cart.filter((item) => item.id !== id) })
       },
+
       clearCart: () => set({ cart: [] }),
     }),
     {
