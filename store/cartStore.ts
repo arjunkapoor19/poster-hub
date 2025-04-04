@@ -17,7 +17,6 @@ type CartState = {
   toggleCart: () => void
   addToCart: (item: CartItem) => void
   removeFromCart: (id: string) => void
-  clearCart: () => void
 }
 
 // Zustand store with localStorage persistence
@@ -46,8 +45,13 @@ export const useCartStore = create<CartState>()(
       },
 
       removeFromCart: (id) => {
-        set({ cart: get().cart.filter((item) => item.id !== id) })
+        const updatedCart = get().cart.map((item) =>
+          item.id === id ? { ...item, quantity: item.quantity - 1 } : item
+        ).filter((item) => item.quantity > 0) // Remove only if quantity reaches 0
+
+        set({ cart: updatedCart })
       },
+
 
       clearCart: () => set({ cart: [] }),
     }),
