@@ -44,7 +44,7 @@ const Header = () => {
             <Button variant="ghost" size="icon" onClick={openDrawer}>
               <ShoppingCart className="h-5 w-5" />
               {cartCount > 0 && (
-                <span className="ml-1 text-sm font-bold">{cartCount}</span>
+                <span className="text-sm font-bold">{cartCount}</span>
               )}
               <span className="sr-only">Cart</span>
             </Button>

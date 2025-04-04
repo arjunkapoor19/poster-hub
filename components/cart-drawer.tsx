@@ -6,6 +6,7 @@ import { motion } from "framer-motion"
 import { X, Minus, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Image from "next/image"
+import CheckoutSection from "./checkout-section"
 
 const CartDrawer = () => {
   const { cart, addToCart, removeFromCart} = useCartStore()
@@ -109,7 +110,7 @@ const CartDrawer = () => {
           </div>
 
           {/* Checkout Button */}
-          <Button className="w-full mt-4 bg-black text-white">Checkout</Button>
+          <CheckoutSection />
 
           {/* Continue Shopping */}
           <Button className="w-full mt-2" variant="outline" onClick={closeDrawer}>
