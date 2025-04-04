@@ -58,7 +58,7 @@ export default function PopularPosters() {
               {poster.title}
             </Link>
             <p className="text-sm text-muted-foreground">₹{poster.price.toFixed(2)}</p>
-            <Button className="flex flex-grow-1 mt-6 w-full font-bold" onClick={() => addToCart({ id: poster.id, name: poster.title, price: poster.price, quantity: 1 })}>Add to Cart</Button>
+            <Button className="flex flex-grow-1 mt-6 w-full font-bold" onClick={() => addToCart({ id: poster.id, name: poster.title, price: poster.price, quantity: 1, image: poster.image || "/placeholder.svg" })}>Add to Cart</Button>
           </CardFooter>
         </Card>
       ))}

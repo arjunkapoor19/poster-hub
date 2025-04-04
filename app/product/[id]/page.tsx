@@ -119,7 +119,7 @@ export default function ProductPage() {
             <p>🎁 Perfect for gifting or personal decor</p>
           </div>
           
-          <Button className="mt-6 w-full font-bold" onClick={() => addToCart({ id: product.id, name: product.title, price: product.price, quantity: 1 })}>Add to Cart</Button>
+          <Button className="mt-6 w-full font-bold" onClick={() => addToCart({ id: product.id, name: product.title, price: product.price, quantity: 1, image: product.image || "/placeholder.svg" })}>Add to Cart</Button>
 
         </div>
       </div>

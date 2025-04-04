@@ -4,6 +4,7 @@ import { useCartStore } from "@/store/cartStore"
 import { motion } from "framer-motion"
 import { X } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import Image from "next/image"
 import { useCartDrawerStore } from "@/store/cartDrawerStore"
 
 const CartDrawer = () => {
@@ -29,13 +30,28 @@ const CartDrawer = () => {
       ) : (
         <div className="mt-4 space-y-4">
           {cart.map((item) => (
-            <div key={item.id} className="flex justify-between items-center border-b pb-2">
-              <div>
+            <div key={item.id} className="flex gap-4 py-2 border-b last:border-0">
+                <div className="w-20 h-24 relative bg-gray-100">
+                                          {item.image ? (
+                                            <Image
+                                              src={item.image}
+                                              alt={item.name}
+                                              fill
+                                              className="object-cover"
+                                            />
+                                          ) : (
+                                            <div className="w-full h-full flex items-center justify-center text-gray-400">
+                                              No image
+                                            </div>
+                                          )}
+                                        </div>
+              <div className="flex-grow"> 
                 <h3 className="font-medium">{item.name}</h3>
-                <p className="text-sm text-gray-500">${item.price} x {item.quantity}</p>
+                <p className="text-sm text-gray-500">₹{item.price} x {item.quantity}</p>
               </div>
-              <Button size="sm" variant="destructive" onClick={() => removeFromCart(item.id)}>
-                Remove
+    
+              <Button onClick={() => removeFromCart(item.id)} size="icon" className="p-0 text-black bg-white hover:bg-gray-200 " >
+                <X />
               </Button>
             </div>
           ))}

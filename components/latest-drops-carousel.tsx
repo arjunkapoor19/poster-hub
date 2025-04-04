@@ -117,7 +117,7 @@ export default function LatestDropsCarousel() {
                     {poster.title}
                   </Link>
                   <p className="text-sm text-muted-foreground">₹{poster.price.toFixed(2)}</p>
-                  <Button className="flex flex-grow-1 mt-6 w-full font-bold" onClick={() => addToCart({ id: poster.id, name: poster.title, price: poster.price, quantity: 1 })}>
+                  <Button className="flex flex-grow-1 mt-6 w-full font-bold" onClick={() => addToCart({ id: poster.id, name: poster.title, price: poster.price, quantity: 1, image: poster.image || "/placeholder.svg" })}>
                     Add to Cart
                     </Button>
                 </CardFooter>
