@@ -2,6 +2,12 @@
 
 import { useState } from 'react'
 import { supabase } from '@/lib/supabaseClient'
+import { Montserrat } from 'next/font/google';
+
+const montserrat = Montserrat({
+    weight: "400",
+    subsets: ["latin"],
+  });
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -30,9 +36,10 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
+    <div className = {` min-h-screen flex items-center justify-center bg-gray-100 px-4 antialiased ${montserrat.className}`}>
       <form onSubmit={handleLogin} className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md">
-        <h1 className="text-2xl font-bold mb-6 text-center">Login or Sign Up</h1>
+        <h1 className="text-2xl font-bold mb-3 ">Login</h1>
+        <h3 className='mb-6 text-sm'>Enter your email id and we will send you a login code.</h3>
 
         <input
           type="email"
@@ -48,7 +55,7 @@ export default function LoginPage() {
           className="w-full py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition"
           disabled={loading}
         >
-          {loading ? 'Sending...' : 'Get Magic Link'}
+          {loading ? 'Sending...' : 'Login'}
         </button>
 
         {message && <p className="mt-4 text-center text-sm text-gray-600">{message}</p>}

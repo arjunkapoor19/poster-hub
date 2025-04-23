@@ -1,8 +1,13 @@
 import type { Metadata } from 'next'
-import { Questrial } from "next/font/google";
+import { Questrial, Montserrat } from "next/font/google";
 import './globals.css'
 
 const questrial = Questrial({
+    weight: "400",
+    subsets: ["latin"],
+  });
+
+const montserrat = Montserrat({
     weight: "400",
     subsets: ["latin"],
   });
