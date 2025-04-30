@@ -32,7 +32,7 @@ export default function HeroBanner() {
       <div className="relative flex h-full items-end pb-16 md:pb-24">
         <div className="container px-4">
           <div className="max-w-md space-y-4">
-            <h1 className="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">Latest Collection 2025</h1>
+            <h1 className="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl text-white">Latest Collection 2025</h1>
             <p className="text-white">Exclusive limited edition prints to brighten your space</p>
             <div className="flex flex-col space-y-2 sm:flex-row sm:space-x-2 sm:space-y-0">
               <Button asChild size="lg" className="w-full sm:w-auto">
