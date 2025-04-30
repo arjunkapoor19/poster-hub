@@ -19,6 +19,7 @@ const Header = () => {
   const { openDrawer } = useCartDrawerStore()
   const [cartCount, setCartCount] = useState(0)
   const [user, setUser] = useState<SupabaseUser | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const [showLogoutModal, setShowLogoutModal] = useState(false)
@@ -28,21 +29,30 @@ const Header = () => {
   }, [cart])
 
   useEffect(() => {
-    // Check current auth session
-    const getUser = async () => {
-      const { data } = await supabase.auth.getUser()
-      setUser(data.user)
-    }
-
-    getUser()
-
-    // Subscribe to auth state changes
-    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+    // Set up auth state listener right away
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user || null)
+      setIsLoading(false)
     })
 
+    // Initial auth check
+    const checkInitialAuth = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        setUser(session?.user || null)
+        console.log("session here",session)
+      } catch (error) {
+        console.error("Auth check error:", error)
+        setUser(null)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    checkInitialAuth()
+
     return () => {
-      listener?.subscription.unsubscribe()
+      authListener?.subscription.unsubscribe()
     }
   }, [])
 
@@ -81,16 +91,37 @@ const Header = () => {
         console.error("Error logging out:", error.message)
       } else {
         setDropdownOpen(false)
+        setUser(null) // Immediately update UI
         setShowLogoutModal(true)
-        // Redirect happens after modal display (in useEffect)
       }
     } catch (error) {
       console.error("Unexpected error during logout:", error)
     }
   }
 
-  const toggleDropdown = () => {
-    setDropdownOpen(!dropdownOpen)
+  const handleUserIconClick = () => {
+    if (isLoading) return
+  
+    if (user) {
+      const isMagicLinkVerified = !!user.email_confirmed_at
+      if (isMagicLinkVerified) {
+        router.push("/profile")
+      } else {
+        // fallback if user somehow not verified yet
+        setDropdownOpen(!dropdownOpen)
+      }
+    } else {
+      router.push("/login")
+    }
+  }
+  
+  
+
+  const handleProfileClick = (e: React.MouseEvent) => {
+    e.preventDefault() // Prevent any default behavior
+    e.stopPropagation() // Stop event bubbling
+    setDropdownOpen(false) // Close dropdown
+    router.push("/profile") // Navigate programmatically 
   }
 
   return (
@@ -125,34 +156,30 @@ const Header = () => {
             
             {/* User Account Button with Dropdown */}
             <div className="relative hidden md:block" ref={dropdownRef}>
-              {user ? (
-                <Button variant="ghost" size="icon" onClick={toggleDropdown}>
-                  <UserRound className="h-5 w-5" />
-                  <span className="sr-only">Account</span>
-                </Button>
-              ) : (
-                <Link href="/login">
-                  <Button variant="ghost" size="icon">
-                    <UserRound className="h-5 w-5" />
-                    <span className="sr-only">Login</span>
-                  </Button>
-                </Link>
-              )}
+              {/* Show a single button for both logged in and logged out states */}
+              <Button
+                variant="ghost" 
+                size="icon" 
+                onClick={handleUserIconClick}
+                disabled={isLoading}
+              >
+                <UserRound className="h-5 w-5" />
+                <span className="sr-only">{user ? "Account" : "Login"}</span>
+              </Button>
 
-              {/* Profile Dropdown Menu */}
-              {dropdownOpen && user && (
+              {/* Profile Dropdown Menu - Only show when logged in and dropdown is open */}
+              {!isLoading && user && dropdownOpen && (
                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200">
-                  <div className="px-4 py-2 text-sm text-gray-700 border-b border-gray-200 font-bold">
+                  <div className="px-4 py-2 text-sm text-gray-700 border-b border-gray-200 font-bold truncate">
                     {user.email}
                   </div>
-                  <Link 
-                    href="/profile" 
-                    className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
-                    onClick={() => setDropdownOpen(false)}
+                  <button 
+                    onClick={handleProfileClick}
+                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
                   >
                     <User className="h-4 w-4 mr-2" />
                     Profile
-                  </Link>
+                  </button>
                   <button 
                     onClick={handleLogout}
                     className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"

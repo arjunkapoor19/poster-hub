@@ -22,7 +22,7 @@ export default function LoginPage() {
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
-        emailRedirectTo: 'https://poster-hub-iota.vercel.app/',
+        // emailRedirectTo: 'https://poster-hub-iota.vercel.app/',
       },
     })
 
