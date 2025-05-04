@@ -113,7 +113,7 @@ export default function Footer() {
           </div>
         </div>
         <div className="mt-8 border-t pt-8 text-center text-sm text-muted-foreground">
-          <p>© 2025 PosterHub. All rights reserved.</p>
+          <p>© 2025 PosterPlug. All rights reserved.</p>
         </div>
       </div>
     </footer>

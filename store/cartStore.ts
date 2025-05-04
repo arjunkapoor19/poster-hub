@@ -17,6 +17,7 @@ type CartState = {
   toggleCart: () => void
   addToCart: (item: CartItem) => void
   removeFromCart: (id: string) => void
+  clearCart: () => void // Add this function to the type
 }
 
 // Zustand store with localStorage persistence
@@ -51,7 +52,6 @@ export const useCartStore = create<CartState>()(
 
         set({ cart: updatedCart })
       },
-
 
       clearCart: () => set({ cart: [] }),
     }),
