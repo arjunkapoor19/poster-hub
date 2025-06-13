@@ -6,10 +6,14 @@ import LatestDropsCarousel from "@/components/latest-drops-carousel"
 import PopularPosters from "@/components/popular-posters"
 import Footer from "@/components/footer"
 import Header from "@/components/header"
+import { getProductsInCollection } from '@/lib/shopify';
 
-export default function Home() {
-  return (
+export default async function Home() {
+    const latestDropsProducts = await getProductsInCollection('latest-drops');
+    
+    return (
     <main className="flex min-h-screen flex-col">
+        
 
       <Header />
       
@@ -23,7 +27,7 @@ export default function Home() {
             <ChevronRight className="ml-1 h-4 w-4" />
           </Link>
         </div>
-        <LatestDropsCarousel />
+        <LatestDropsCarousel products={latestDropsProducts}/>
       </div>
 
       <div className="container px-4 py-8 md:py-12">
@@ -42,7 +46,7 @@ export default function Home() {
 
       <div className="container px-4 py-8 md:py-12">
         <h2 className="text-2xl font-bold tracking-tight mb-6">Featured Collections</h2>
-        <LatestDropsCarousel />
+        <LatestDropsCarousel products={latestDropsProducts}/>
       </div>
 
 

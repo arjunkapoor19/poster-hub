@@ -25,7 +25,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`antialiased ${questrial.className}`}>{children}</body>
+      <body className={`antialiased ${questrial.className}`}>{children}
+        <div id="search-portal"></div>
+      </body>
     </html>
   )
 }
