@@ -133,7 +133,7 @@ const Header = () => {
             href="/"
             className="md:mr-4 absolute left-1/2 transform -translate-x-1/2 md:static md:transform-none md:left-0 flex items-center space-x-2"
           >
-            <span className="text-2xl md:text-3xl font-bold md:ml-7">PosterPlug</span>
+            <span className="text-2xl md:text-3xl font-bold md:ml-7">WallStreet</span>
           </Link>
           <div className="hidden flex-1 md:flex">
             <nav className="flex items-center space-x-6 text-m font-medium ml-10">
