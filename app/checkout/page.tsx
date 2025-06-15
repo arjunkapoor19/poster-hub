@@ -11,14 +11,12 @@ import Header from "@/components/header"
 import Footer from "@/components/footer"
 import { useCartStore } from "@/store/cartStore"
 import { supabase } from "@/lib/supabaseClient"
-// If you don't have toast component, uncomment the import below:
-// import { toast } from "@/components/ui/use-toast"
 
 export default function CheckoutPage() {
   const router = useRouter()
   const [billingSameAsShipping, setBillingSameAsShipping] = useState(true)
   const [loading, setLoading] = useState(false)
-  const { cart, clearCart } = useCartStore()
+  const { cart } = useCartStore() // We don't need clearCart here anymore
   
   // Form states
   const [firstName, setFirstName] = useState("")
@@ -35,83 +33,79 @@ export default function CheckoutPage() {
   const shippingCost = shippingMethod === "cod" ? 149 : 0
   const orderTotal = cartTotal + shippingCost
 
-  const handleSubmitOrder = async () => {
-    // Basic validation
+  // --- THIS IS THE NEW PAYMENT HANDLER ---
+  const handlePayment = async () => {
+    // 1. Basic Validation
     if (!firstName || !lastName || !address || !city || !state || !pinCode || !phone) {
-      alert("Please fill all required fields")
+      alert("Please fill all required delivery fields.")
       return
     }
-
-    // Check if cart is empty
     if (cart.length === 0) {
-      alert("Your cart is empty")
+      alert("Your cart is empty.")
       return
     }
 
     setLoading(true)
 
     try {
-      // Get current authenticated user
-      const { data: { user }, error: userError } = await supabase.auth.getUser()
-      
-      if (userError || !user) {
-        alert("You must be logged in to place an order")
+      // 2. Get User
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        alert("You must be logged in to place an order.")
         setLoading(false)
         return
       }
 
-      // Create shipping address object
-      const shippingAddress = {
-        firstName,
-        lastName,
-        address,
-        city,
-        state,
-        pinCode,
-        phone
+      // 3. Call our backend API to initiate the PhonePe payment
+      const response = await fetch('/api/phonepe/pay', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: orderTotal }),
+      });
+      
+      const paymentData = await response.json();
+
+      if (!paymentData.success) {
+        alert(`Payment initiation failed: ${paymentData.message}`);
+        setLoading(false);
+        return;
       }
 
-      // Create order in database
+      // 4. Create the order in our database with a 'Pending Payment' status
+      const shippingAddress = { firstName, lastName, address, city, state, pinCode, phone };
       const { error: orderError } = await supabase
         .from("orders")
         .insert({
           user_id: user.id,
-          // --- MODIFICATION: Standardize the 'items' payload ---
-          // We now only send the product_id and quantity, not the name and price.
-          items: cart.map(item => ({
-            product_id: item.id,
-            quantity: item.quantity
-          })),
-          status: "Processing",
+          items: cart.map(item => ({ product_id: item.id, quantity: item.quantity })),
+          status: "Pending Payment", // CRITICAL: Start with a pending status
           shipping_address: shippingAddress,
           shipping_method: shippingMethod,
           shipping_cost: shippingCost,
           subtotal: cartTotal,
           total_amount: orderTotal,
+          merchant_transaction_id: paymentData.merchantTransactionId, // Store the transaction ID
           created_at: new Date().toISOString()
-        })
+        });
 
       if (orderError) {
-        console.error("Error creating order:", orderError)
-        alert(`Error creating your order: ${orderError.message}. Please try again.`)
-        setLoading(false)
-        return
+        console.error("Error creating order:", orderError);
+        // We should ideally try to cancel the PhonePe transaction here, but for now, we alert the user.
+        alert(`Could not create your order: ${orderError.message}. Please try again.`);
+        setLoading(false);
+        return;
       }
+      
+      // 5. Redirect the user to the PhonePe payment page
+      // We don't clear the cart. It will be cleared on the success page.
+      router.push(paymentData.redirectUrl);
 
-      // Clear the cart after successful order
-      clearCart()
-      
-      // Show success message and redirect
-      alert("Order placed successfully! You will receive a confirmation email shortly.")
-      
-      // Redirect to success page or orders page
-      router.push("/profile")
     } catch (error: any) {
-      console.error("Order submission error:", error)
-      alert(`An unexpected error occurred: ${error?.message || 'Unknown error'}. Please try again.`)
-    } finally {
-      setLoading(false)
+      console.error("An unexpected error occurred:", error);
+      alert(`An unexpected error occurred: ${error?.message || 'Unknown error'}.`);
+      setLoading(false);
     }
+    // No need for a `finally` block to set loading to false, as the user will be redirected.
   }
 
   return (
@@ -119,15 +113,12 @@ export default function CheckoutPage() {
       <Header />
       
       <div className="flex flex-col md:flex-row gap-6 p-4 md:p-6 max-w-6xl mx-auto">
-        {/* Left column - Form */}
+        {/* Left column - Form (No changes needed here) */}
         <div className="flex-1 flex flex-col gap-4">
-          {/* Account Info */}
           <Card className="p-4">
             <h2 className="text-lg font-semibold">Account</h2>
             <p className="text-sm text-gray-500">01arjunkapoor@gmail.com</p>
           </Card>
-
-          {/* Delivery Section */}
           <Card className="p-4">
             <h2 className="text-lg font-semibold">Delivery</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">
@@ -140,8 +131,6 @@ export default function CheckoutPage() {
               <Input placeholder="Phone Number *" value={phone} onChange={(e) => setPhone(e.target.value)} required />
             </div>
           </Card>
-
-          {/* Shipping Method */}
           <Card className="p-4">
             <h2 className="text-lg font-semibold">Shipping Method</h2>
             <RadioGroup defaultValue="prepaid" value={shippingMethod} onValueChange={setShippingMethod}>
@@ -155,17 +144,13 @@ export default function CheckoutPage() {
               </div>
             </RadioGroup>
           </Card>
-
-          {/* Payment Section */}
           <Card className="p-4">
             <h2 className="text-lg font-semibold">Payment</h2>
             <p className="text-sm text-gray-500 mb-3">All transactions are secure and encrypted.</p>
             <div className="flex justify-between items-center bg-gray-100 p-3 rounded-md">
-              <p className="text-sm">PhonePe Payment Gateway (UPI, Cards & NetBanking)</p>
+              <p className="text-sm">Pay via PhonePe (UPI, Cards & NetBanking)</p>
             </div>
           </Card>
-
-          {/* Billing Address */}
           <Card className="p-4">
             <h2 className="text-lg font-semibold">Billing Address</h2>
             <div className="flex items-center space-x-2 mt-2">
@@ -201,8 +186,13 @@ export default function CheckoutPage() {
                 <span>₹{orderTotal}</span>
               </div>
             </div>
-            <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white py-6 rounded-lg text-lg mt-4" onClick={handleSubmitOrder} disabled={loading}>
-              {loading ? "Processing..." : "Place Order"}
+            {/* --- UI UPDATE: Changed button text and onClick handler --- */}
+            <Button 
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-6 rounded-lg text-lg mt-4"
+              onClick={handlePayment} // Use the new handler
+              disabled={loading}
+            >
+              {loading ? "Initiating Payment..." : `Proceed to Pay ₹${orderTotal}`}
             </Button>
           </Card>
         </div>
