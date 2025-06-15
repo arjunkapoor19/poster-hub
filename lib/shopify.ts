@@ -1,28 +1,26 @@
 // /lib/shopify.ts
 
+// --- Base Types ---
 export type ShopifyImage = {
   url: string;
   altText: string | null;
 };
-
 export type MoneyV2 = {
   amount: string;
   currencyCode: string;
 };
-
 export type ProductVariant = {
   id: string;
   title: string;
   price: MoneyV2;
   image: ShopifyImage;
 };
-
 export type Product = {
   id: string;
   handle: string;
   title: string;
   description: string;
-  productType: string | null; // <--- FIX: Added this property to match the data being fetched.
+  productType: string | null;
   priceRange: {
     minVariantPrice: MoneyV2;
   };
@@ -33,7 +31,6 @@ export type Product = {
     edges: { node: ProductVariant }[];
   };
 };
-
 export type LineItem = {
   node: {
     title: string;
@@ -44,10 +41,9 @@ export type LineItem = {
     };
   };
 };
-
 export type Order = {
   id: string;
-  name: string; // The order number, e.g., "#1001"
+  name: string;
   processedAt: string;
   financialStatus: 'PAID' | 'PENDING' | 'REFUNDED' | 'VOIDED';
   fulfillmentStatus: 'FULFILLED' | 'UNFULFILLED' | 'PARTIALLY_FULFILLED';
@@ -56,16 +52,18 @@ export type Order = {
     edges: LineItem[];
   };
 };
-
 export type Customer = {
   id: string;
   firstName: string | null;
   lastName: string | null;
   email: string;
-  // We can add more fields as needed, like addresses.
+};
+export type CustomerAccessToken = {
+  accessToken: string;
+  expiresAt: string;
 };
 
-// Types for API responses which include the "edges" and "node" nesting
+// --- API Response Types ---
 type ProductsAPIResponse = { products: { edges: { node: Product }[] } };
 type ProductByHandleAPIResponse = { product: Product | null };
 type CustomerAPIResponse = { customer: (Customer & { orders: { edges: { node: Order }[] } }) | null };
@@ -73,12 +71,16 @@ type CustomerAPIResponse = { customer: (Customer & { orders: { edges: { node: Or
 
 // ================================================================= //
 //                      THE CORE FETCH ENGINE                        //
-// This generic function handles all communication with the API.     //
 // ================================================================= //
 
 const domain = process.env.NEXT_PUBLIC_SHOPIFY_STORE_DOMAIN!;
 const storefrontAccessToken = process.env.NEXT_PUBLIC_SHOPIFY_STOREFRONT_ACCESS_TOKEN!;
-const SHOPIFY_API_ENDPOINT = `https://${domain}/api/2023-10/graphql.json`;
+const SHOPIFY_API_ENDPOINT = `https://${domain}/api/2024-04/graphql.json`;
+
+// --- vvvvv DEBUGGING LOGS vvvvv ---
+console.log("--- Reading shopify.ts file ---");
+console.log("Connecting to Shopify API Endpoint:", SHOPIFY_API_ENDPOINT);
+// --- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ ---
 
 async function shopifyFetch<T>({
   query,
@@ -86,7 +88,7 @@ async function shopifyFetch<T>({
 }: {
   query: string;
   variables?: Record<string, unknown>;
-}): Promise<T> {
+}): Promise<{ data: T; errors: any[] | null }> {
   const response = await fetch(SHOPIFY_API_ENDPOINT, {
     method: 'POST',
     headers: {
@@ -99,25 +101,18 @@ async function shopifyFetch<T>({
   const result = await response.json();
 
   if (result.errors) {
-    console.error("Shopify Errors:", result.errors);
-    throw new Error("Failed to fetch from Shopify API.");
+    console.error("Shopify Errors:", JSON.stringify(result.errors, null, 2));
   }
   
-  return result.data;
+  return { data: result.data, errors: result.errors || null };
 }
-
 
 // ================================================================= //
 //                      EXPORTED HELPER FUNCTIONS                    //
-// These are the specific, high-level functions you'll use in your app. //
 // ================================================================= //
 
-// --- Product Functions ---
+// --- Product, Collection, and Search Functions ---
 
-/**
- * Fetches all products from your Shopify store.
- * @returns {Promise<Product[]>} A list of products.
- */
 export async function getProducts(): Promise<Product[]> {
   const query = `
     query getProducts {
@@ -148,15 +143,10 @@ export async function getProducts(): Promise<Product[]> {
       }
     }
   `;
-  const response = await shopifyFetch<ProductsAPIResponse>({ query });
-  return response.products.edges.map(edge => edge.node);
+  const { data } = await shopifyFetch<ProductsAPIResponse>({ query });
+  return data.products.edges.map(edge => edge.node);
 }
 
-/**
- * Fetches a single product by its handle (URL slug).
- * @param {string} handle - The product's handle.
- * @returns {Promise<Product | null>} The product object or null if not found.
- */
 export async function getProductByHandle(handle: string): Promise<Product | null> {
   const query = `
     query getProductByHandle($handle: String!) {
@@ -193,89 +183,18 @@ export async function getProductByHandle(handle: string): Promise<Product | null
       }
     }
   `;
-  const response = await shopifyFetch<ProductByHandleAPIResponse>({ 
+  const { data } = await shopifyFetch<ProductByHandleAPIResponse>({ 
     query, 
     variables: { handle } 
   });
-  return response.product;
+  return data.product;
 }
 
-// --- Customer & Order Functions (Authenticated) ---
-
-/**
- * Fetches the currently logged-in customer's data, including their orders.
- * @param {string} customerAccessToken - The customer's access token from a cookie.
- * @returns {Promise<{customer: Customer, orders: Order[]} | null>} An object with customer and order details, or null if token is invalid.
- */
-export async function getCustomerData(customerAccessToken: string): Promise<{ customer: Customer; orders: Order[] } | null> {
-  const query = `
-    query getCustomerData($customerAccessToken: String!) {
-      customer(customerAccessToken: $customerAccessToken) {
-        id
-        firstName
-        lastName
-        email
-        orders(first: 20, sortKey: PROCESSED_AT, reverse: true) {
-          edges {
-            node {
-              id
-              name
-              processedAt
-              financialStatus
-              fulfillmentStatus
-              totalPrice {
-                amount
-                currencyCode
-              }
-              lineItems(first: 5) {
-                edges {
-                  node {
-                    title
-                    quantity
-                    variant {
-                      title
-                      image {
-                        url
-                        altText
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  `;
-  const response = await shopifyFetch<CustomerAPIResponse>({ 
-    query, 
-    variables: { customerAccessToken } 
-  });
-
-  if (!response.customer) {
-    return null; // Token is invalid or expired
-  }
-  
-  const { orders, ...customerDetails } = response.customer;
-  const customerOrders = orders.edges.map(edge => edge.node);
-
-  return {
-    customer: customerDetails,
-    orders: customerOrders,
-  };
-}
-
-/**
- * Fetches products from a specific collection by its handle.
- * @param {string} collectionHandle - The handle of the collection (e.g., 'latest-drops').
- * @returns {Promise<Product[]>} A list of products found in that collection.
- */
 export async function getProductsInCollection(collectionHandle: string): Promise<Product[]> {
   const query = `
     query getProductsInCollection($handle: String!) {
       collection(handle: $handle) {
-        products(first: 10) { # Fetches up to 10 products from the collection
+        products(first: 10) {
           edges {
             node {
               id
@@ -318,21 +237,14 @@ export async function getProductsInCollection(collectionHandle: string): Promise
     } | null
   };
 
-  const response = await shopifyFetch<ResponseType>({ 
+  const { data } = await shopifyFetch<ResponseType>({ 
     query, 
     variables: { handle: collectionHandle } 
   });
 
-  return response.collection?.products?.edges.map(edge => edge.node) || [];
+  return data.collection?.products?.edges.map(edge => edge.node) || [];
 }
 
-// In /lib/shopify.ts
-
-/**
- * Searches for products in the store using a more robust query.
- * @param {string} searchTerm - The term to search for.
- * @returns {Promise<Product[]>} A list of matching products. ALWAYS returns an array.
- */
 export async function searchProducts(searchTerm: string): Promise<Product[]> {
   const query = `
     query searchProducts($searchQuery: String!) {
@@ -368,24 +280,119 @@ export async function searchProducts(searchTerm: string): Promise<Product[]> {
   };
 
   try {
-    const response = await shopifyFetch<{ products: { edges: { node: Product }[] } | null }>({ 
+    const { data } = await shopifyFetch<{ products: { edges: { node: Product }[] } | null }>({ 
       query,
       variables
     });
-
-    // --- THIS IS THE KEY DEFENSIVE CHECK ---
-    // If response.products is null or doesn't have edges, return an empty array.
-    if (!response.products?.edges) {
+    
+    if (!data.products?.edges) {
       console.log("Shopify search returned no products or a null response.");
       return [];
     }
     
-    // If we get here, we know we have a valid array of edges.
-    return response.products.edges.map(edge => edge.node);
+    return data.products.edges.map(edge => edge.node);
 
   } catch (error) {
     console.error("Error in searchProducts function:", error);
-    // If the entire fetch fails, still return an empty array so the UI doesn't crash.
     return [];
+  }
+}
+
+// ================================================================= //
+//                      CUSTOMER ACCOUNT FUNCTIONS (REDIRECT METHOD) //
+// ================================================================= //
+
+/**
+ * Redirects the user to Shopify's built-in login page with email code authentication
+ * This is the simplest and most reliable method for the new Customer Account API
+ */
+export function redirectToShopifyLogin() {
+  // Add return_to parameter to redirect back to your site after login
+  const returnUrl = encodeURIComponent(`http://localhost:3000/profile`);
+  window.location.href = `https://${domain}/account/login?return_to=${returnUrl}`;
+}
+
+/**
+ * Redirects the user to Shopify's account page (for logged-in users)
+ */
+export function redirectToShopifyAccount() {
+  window.location.href = `https://${domain}/account`;
+}
+
+/**
+ * Redirects the user to Shopify's logout page
+ */
+export function redirectToShopifyLogout() {
+  const returnUrl = encodeURIComponent(`http://localhost:3000/`);
+  window.location.href = `https://${domain}/account/logout?return_to=${returnUrl}`;
+}
+
+/**
+ * Check if the user is logged in by trying to fetch customer data
+ * This function is kept for backward compatibility but will likely fail
+ * with the new Customer Account API since tokens are handled by Shopify
+ */
+export async function getCustomerData(customerAccessToken: string): Promise<{ customer: Customer; orders: Order[] } | null> {
+  const query = `
+    query getCustomerData($customerAccessToken: String!) {
+      customer(customerAccessToken: $customerAccessToken) {
+        id
+        firstName
+        lastName
+        email
+        orders(first: 20, sortKey: PROCESSED_AT, reverse: true) {
+          edges {
+            node {
+              id
+              name
+              processedAt
+              financialStatus
+              fulfillmentStatus
+              totalPrice {
+                amount
+                currencyCode
+              }
+              lineItems(first: 5) {
+                edges {
+                  node {
+                    title
+                    quantity
+                    variant {
+                      title
+                      image {
+                        url
+                        altText
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  `;
+  
+  try {
+    const { data } = await shopifyFetch<CustomerAPIResponse>({ 
+      query, 
+      variables: { customerAccessToken } 
+    });
+
+    if (!data.customer) {
+      return null; // Token is invalid or expired
+    }
+    
+    const { orders, ...customerDetails } = data.customer;
+    const customerOrders = orders.edges.map(edge => edge.node);
+
+    return {
+      customer: customerDetails,
+      orders: customerOrders,
+    };
+  } catch (error) {
+    console.error("Error fetching customer data:", error);
+    return null;
   }
 }
