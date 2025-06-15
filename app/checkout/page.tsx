@@ -76,10 +76,10 @@ export default function CheckoutPage() {
         .from("orders")
         .insert({
           user_id: user.id,
+          // --- MODIFICATION: Standardize the 'items' payload ---
+          // We now only send the product_id and quantity, not the name and price.
           items: cart.map(item => ({
             product_id: item.id,
-            name: item.name,
-            price: item.price,
             quantity: item.quantity
           })),
           status: "Processing",
@@ -102,13 +102,6 @@ export default function CheckoutPage() {
       clearCart()
       
       // Show success message and redirect
-      // If you have a toast component:
-      // toast({
-      //   title: "Order placed successfully!",
-      //   description: "You will receive a confirmation email shortly."
-      // })
-      
-      // If you don't have toast:
       alert("Order placed successfully! You will receive a confirmation email shortly.")
       
       // Redirect to success page or orders page
@@ -138,71 +131,27 @@ export default function CheckoutPage() {
           <Card className="p-4">
             <h2 className="text-lg font-semibold">Delivery</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">
-              <Input 
-                placeholder="First Name *" 
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                required
-              />
-              <Input 
-                placeholder="Last Name *" 
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-                required
-              />
-              <Input 
-                placeholder="Address *" 
-                className="md:col-span-2"
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-                required
-              />
-              <Input 
-                placeholder="City *" 
-                value={city}
-                onChange={(e) => setCity(e.target.value)}
-                required
-              />
-              <Input 
-                placeholder="State *" 
-                value={state}
-                onChange={(e) => setState(e.target.value)}
-                required
-              />
-              <Input 
-                placeholder="PIN Code *" 
-                value={pinCode}
-                onChange={(e) => setPinCode(e.target.value)}
-                required
-              />
-              <Input 
-                placeholder="Phone Number *" 
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                required
-              />
+              <Input placeholder="First Name *" value={firstName} onChange={(e) => setFirstName(e.target.value)} required />
+              <Input placeholder="Last Name *" value={lastName} onChange={(e) => setLastName(e.target.value)} required />
+              <Input placeholder="Address *" className="md:col-span-2" value={address} onChange={(e) => setAddress(e.target.value)} required />
+              <Input placeholder="City *" value={city} onChange={(e) => setCity(e.target.value)} required />
+              <Input placeholder="State *" value={state} onChange={(e) => setState(e.target.value)} required />
+              <Input placeholder="PIN Code *" value={pinCode} onChange={(e) => setPinCode(e.target.value)} required />
+              <Input placeholder="Phone Number *" value={phone} onChange={(e) => setPhone(e.target.value)} required />
             </div>
           </Card>
 
           {/* Shipping Method */}
           <Card className="p-4">
             <h2 className="text-lg font-semibold">Shipping Method</h2>
-            <RadioGroup 
-              defaultValue="prepaid"
-              value={shippingMethod}
-              onValueChange={setShippingMethod}
-            >
+            <RadioGroup defaultValue="prepaid" value={shippingMethod} onValueChange={setShippingMethod}>
               <div className="flex items-center space-x-2 mt-2">
                 <RadioGroupItem value="prepaid" id="prepaid" />
-                <label htmlFor="prepaid" className="text-sm">
-                  Prepaid - Free Express Shipping (3-5 Days)
-                </label>
+                <label htmlFor="prepaid" className="text-sm">Prepaid - Free Express Shipping (3-5 Days)</label>
               </div>
               <div className="flex items-center space-x-2 mt-2">
                 <RadioGroupItem value="cod" id="cod" />
-                <label htmlFor="cod" className="text-sm">
-                  COD - Standard Shipping (6-8 Days) ₹149.00
-                </label>
+                <label htmlFor="cod" className="text-sm">COD - Standard Shipping (6-8 Days) ₹149.00</label>
               </div>
             </RadioGroup>
           </Card>
@@ -210,12 +159,9 @@ export default function CheckoutPage() {
           {/* Payment Section */}
           <Card className="p-4">
             <h2 className="text-lg font-semibold">Payment</h2>
-            <p className="text-sm text-gray-500 mb-3">
-              All transactions are secure and encrypted.
-            </p>
+            <p className="text-sm text-gray-500 mb-3">All transactions are secure and encrypted.</p>
             <div className="flex justify-between items-center bg-gray-100 p-3 rounded-md">
               <p className="text-sm">PhonePe Payment Gateway (UPI, Cards & NetBanking)</p>
-              {/* You can add payment logos here */}
             </div>
           </Card>
 
@@ -223,14 +169,8 @@ export default function CheckoutPage() {
           <Card className="p-4">
             <h2 className="text-lg font-semibold">Billing Address</h2>
             <div className="flex items-center space-x-2 mt-2">
-              <Checkbox
-                checked={billingSameAsShipping}
-                onCheckedChange={() => setBillingSameAsShipping(!billingSameAsShipping)}
-                id="billingSame"
-              />
-              <label htmlFor="billingSame" className="text-sm">
-                Same as shipping address
-              </label>
+              <Checkbox checked={billingSameAsShipping} onCheckedChange={() => setBillingSameAsShipping(!billingSameAsShipping)} id="billingSame" />
+              <label htmlFor="billingSame" className="text-sm">Same as shipping address</label>
             </div>
           </Card>
         </div>
@@ -239,8 +179,6 @@ export default function CheckoutPage() {
         <div className="w-full md:w-96">
           <Card className="p-4 sticky top-4">
             <h2 className="text-lg font-semibold mb-4">Order Summary</h2>
-            
-            {/* Cart Items */}
             <div className="space-y-3 mb-4">
               {cart.map((item) => (
                 <div key={item.id} className="flex justify-between text-sm">
@@ -249,8 +187,6 @@ export default function CheckoutPage() {
                 </div>
               ))}
             </div>
-            
-            {/* Subtotal */}
             <div className="border-t pt-3 mt-3">
               <div className="flex justify-between text-sm">
                 <span>Subtotal</span>
@@ -265,13 +201,7 @@ export default function CheckoutPage() {
                 <span>₹{orderTotal}</span>
               </div>
             </div>
-            
-            {/* Pay Now Button */}
-            <Button 
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-6 rounded-lg text-lg mt-4"
-              onClick={handleSubmitOrder}
-              disabled={loading}
-            >
+            <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white py-6 rounded-lg text-lg mt-4" onClick={handleSubmitOrder} disabled={loading}>
               {loading ? "Processing..." : "Place Order"}
             </Button>
           </Card>
