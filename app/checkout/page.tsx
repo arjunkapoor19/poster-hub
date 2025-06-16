@@ -16,7 +16,7 @@ export default function CheckoutPage() {
   const router = useRouter()
   const [billingSameAsShipping, setBillingSameAsShipping] = useState(true)
   const [loading, setLoading] = useState(false)
-  const { cart } = useCartStore() // We don't need clearCart here anymore
+  const { cart } = useCartStore()
   
   // Form states
   const [firstName, setFirstName] = useState("")
@@ -33,7 +33,7 @@ export default function CheckoutPage() {
   const shippingCost = shippingMethod === "cod" ? 149 : 0
   const orderTotal = cartTotal + shippingCost
 
-  // --- THIS IS THE NEW PAYMENT HANDLER ---
+  // --- UPDATED PAYMENT HANDLER for PhonePe V2 ---
   const handlePayment = async () => {
     // 1. Basic Validation
     if (!firstName || !lastName || !address || !city || !state || !pinCode || !phone) {
@@ -56,15 +56,17 @@ export default function CheckoutPage() {
         return
       }
 
-      // 3. Call our backend API to initiate the PhonePe payment
+      // 3. Call our backend API with the correct payload
       const response = await fetch('/api/phonepe/pay', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount: orderTotal }),
+        // We now pass the userId as required by our updated API route
+        body: JSON.stringify({ amount: orderTotal, userId: user.id }),
       });
       
       const paymentData = await response.json();
 
+      // Check the new response structure
       if (!paymentData.success) {
         alert(`Payment initiation failed: ${paymentData.message}`);
         setLoading(false);
@@ -78,34 +80,32 @@ export default function CheckoutPage() {
         .insert({
           user_id: user.id,
           items: cart.map(item => ({ product_id: item.id, quantity: item.quantity })),
-          status: "Pending Payment", // CRITICAL: Start with a pending status
+          status: "Pending Payment",
           shipping_address: shippingAddress,
           shipping_method: shippingMethod,
           shipping_cost: shippingCost,
           subtotal: cartTotal,
           total_amount: orderTotal,
-          merchant_transaction_id: paymentData.merchantTransactionId, // Store the transaction ID
+          // Extract the transaction ID from the new response structure
+          merchant_transaction_id: paymentData.data.merchantTransactionId,
           created_at: new Date().toISOString()
         });
 
       if (orderError) {
         console.error("Error creating order:", orderError);
-        // We should ideally try to cancel the PhonePe transaction here, but for now, we alert the user.
         alert(`Could not create your order: ${orderError.message}. Please try again.`);
         setLoading(false);
         return;
       }
       
-      // 5. Redirect the user to the PhonePe payment page
-      // We don't clear the cart. It will be cleared on the success page.
-      router.push(paymentData.redirectUrl);
+      // 5. Redirect the user to the PhonePe payment page using the new URL path
+      router.push(paymentData.data.instrumentResponse.redirectInfo.url);
 
     } catch (error: any) {
       console.error("An unexpected error occurred:", error);
       alert(`An unexpected error occurred: ${error?.message || 'Unknown error'}.`);
       setLoading(false);
     }
-    // No need for a `finally` block to set loading to false, as the user will be redirected.
   }
 
   return (
@@ -113,7 +113,7 @@ export default function CheckoutPage() {
       <Header />
       
       <div className="flex flex-col md:flex-row gap-6 p-4 md:p-6 max-w-6xl mx-auto">
-        {/* Left column - Form (No changes needed here) */}
+        {/* Left column - Form (No changes needed) */}
         <div className="flex-1 flex flex-col gap-4">
           <Card className="p-4">
             <h2 className="text-lg font-semibold">Account</h2>
@@ -186,10 +186,9 @@ export default function CheckoutPage() {
                 <span>₹{orderTotal}</span>
               </div>
             </div>
-            {/* --- UI UPDATE: Changed button text and onClick handler --- */}
             <Button 
               className="w-full bg-blue-600 hover:bg-blue-700 text-white py-6 rounded-lg text-lg mt-4"
-              onClick={handlePayment} // Use the new handler
+              onClick={handlePayment}
               disabled={loading}
             >
               {loading ? "Initiating Payment..." : `Proceed to Pay ₹${orderTotal}`}

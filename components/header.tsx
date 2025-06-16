@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { ShoppingCart, UserRound, LogOut, User, Check } from "lucide-react"
+import { ShoppingCart, UserRound, LogOut, User, Check, Superscript } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import MobileMenu from "@/components/mobile-menu"
 import { AnimatedSearch } from "@/components/animated-search"

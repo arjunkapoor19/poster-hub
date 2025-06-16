@@ -9,34 +9,33 @@ export async function POST(req: NextRequest) {
   const saltIndex = process.env.PHONEPE_SALT_INDEX;
 
   if (!saltKey || !saltIndex) {
-    console.error("PhonePe salt key/index not configured for callback.");
     return NextResponse.json({ message: "Server configuration error" }, { status: 500 });
   }
 
   try {
-    // The request body is a string, not JSON, so we read it as text
-    const bodyText = await req.text();
-    const body = JSON.parse(bodyText);
-    
-    const phonepeResponse = body.response;
-    const xVerifyHeader = req.headers.get('X-VERIFY');
+    const formData = await req.formData();
+    const responsePayload = formData.get('response');
 
-    if (!phonepeResponse || !xVerifyHeader) {
-      return NextResponse.json({ message: "Invalid callback: Missing headers or body." }, { status: 400 });
+    if (!responsePayload) {
+      return NextResponse.json({ message: "Invalid callback: No response payload found." }, { status: 400 });
     }
+
+    const decodedResponse = Buffer.from(responsePayload as string, 'base64').toString('utf-8');
+    const responseData = JSON.parse(decodedResponse);
     
-    // Verify the checksum to ensure the request is genuinely from PhonePe
-    const stringToHash = `${phonepeResponse}${saltKey}`;
+    const xVerifyHeader = req.headers.get('X-VERIFY');
+    
+    // V2 checksum calculation for the callback
+    const stringToHash = `${responsePayload as string}${saltKey}`;
     const calculatedSha256 = crypto.createHash('sha256').update(stringToHash).digest('hex');
     const calculatedChecksum = `${calculatedSha256}###${saltIndex}`;
 
     if (calculatedChecksum !== xVerifyHeader) {
       console.error("Checksum mismatch on callback. Request might be fraudulent.");
+      // You might want to update the order status to "Payment Verification Failed" here
       return NextResponse.json({ message: "Invalid signature" }, { status: 403 });
     }
     
-    const decodedResponse = Buffer.from(phonepeResponse, 'base64').toString('utf-8');
-    const responseData = JSON.parse(decodedResponse);
     const { merchantTransactionId, code } = responseData;
     
     let newStatus = 'Payment Failed';
@@ -46,7 +45,6 @@ export async function POST(req: NextRequest) {
       newStatus = 'Pending Payment';
     }
 
-    // Update order status in your Supabase database
     const { error } = await supabase
       .from('orders')
       .update({ status: newStatus })
@@ -58,11 +56,12 @@ export async function POST(req: NextRequest) {
       console.log(`Order ${merchantTransactionId} status updated to ${newStatus}`);
     }
 
-    // Acknowledge the callback to PhonePe
-    return NextResponse.json({ success: true }, { status: 200 });
+    // After updating your database, you must redirect the user.
+    // The user's browser is waiting for this response.
+    return NextResponse.redirect(`${process.env.NEXT_PUBLIC_BASE_URL}/payment-status/${merchantTransactionId}`, 302);
 
   } catch (error) {
     console.error("Callback handling error:", error);
-    return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
+    return NextResponse.redirect(`${process.env.NEXT_PUBLIC_BASE_URL}/payment-status/failed`, 302);
   }
 }

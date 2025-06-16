@@ -47,7 +47,7 @@ const CheckoutSection = () => {
               />
               <span className="font-normal pl-2">
                 I agree to all
-                <Link href="#" className="font-bold hover:underline pl-1">
+                <Link href="/T&C" className="font-bold hover:underline pl-1">
                   Terms and Conditions
                 </Link>
               </span>
