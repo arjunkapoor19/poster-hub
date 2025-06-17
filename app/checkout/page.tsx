@@ -1,3 +1,5 @@
+// src/app/checkout/page.tsx
+
 "use client"
 
 import { useState } from "react"
@@ -33,7 +35,6 @@ export default function CheckoutPage() {
   const shippingCost = shippingMethod === "cod" ? 149 : 0
   const orderTotal = cartTotal + shippingCost
 
-  // --- UPDATED PAYMENT HANDLER for PhonePe V2 ---
   const handlePayment = async () => {
     // 1. Basic Validation
     if (!firstName || !lastName || !address || !city || !state || !pinCode || !phone) {
@@ -56,24 +57,24 @@ export default function CheckoutPage() {
         return
       }
 
-      // 3. Call our backend API with the correct payload
+      // 3. Call our backend API with the CORRECT payload
       const response = await fetch('/api/phonepe/pay', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        // We now pass the userId as required by our updated API route
+        // THE CRITICAL FIX: We now send both amount and userId
         body: JSON.stringify({ amount: orderTotal, userId: user.id }),
       });
       
       const paymentData = await response.json();
 
-      // Check the new response structure
+      // Check the V2 response structure
       if (!paymentData.success) {
         alert(`Payment initiation failed: ${paymentData.message}`);
         setLoading(false);
         return;
       }
 
-      // 4. Create the order in our database with a 'Pending Payment' status
+      // 4. Create the order in our database
       const shippingAddress = { firstName, lastName, address, city, state, pinCode, phone };
       const { error: orderError } = await supabase
         .from("orders")
@@ -86,19 +87,17 @@ export default function CheckoutPage() {
           shipping_cost: shippingCost,
           subtotal: cartTotal,
           total_amount: orderTotal,
-          // Extract the transaction ID from the new response structure
           merchant_transaction_id: paymentData.data.merchantTransactionId,
           created_at: new Date().toISOString()
         });
 
       if (orderError) {
-        console.error("Error creating order:", orderError);
-        alert(`Could not create your order: ${orderError.message}. Please try again.`);
+        alert(`Could not create your order: ${orderError.message}.`);
         setLoading(false);
         return;
       }
       
-      // 5. Redirect the user to the PhonePe payment page using the new URL path
+      // 5. Redirect the user to the PhonePe payment page
       router.push(paymentData.data.instrumentResponse.redirectInfo.url);
 
     } catch (error: any) {
@@ -113,7 +112,6 @@ export default function CheckoutPage() {
       <Header />
       
       <div className="flex flex-col md:flex-row gap-6 p-4 md:p-6 max-w-6xl mx-auto">
-        {/* Left column - Form (No changes needed) */}
         <div className="flex-1 flex flex-col gap-4">
           <Card className="p-4">
             <h2 className="text-lg font-semibold">Account</h2>
@@ -160,7 +158,6 @@ export default function CheckoutPage() {
           </Card>
         </div>
         
-        {/* Right column - Order Summary */}
         <div className="w-full md:w-96">
           <Card className="p-4 sticky top-4">
             <h2 className="text-lg font-semibold mb-4">Order Summary</h2>
