@@ -1,3 +1,5 @@
+// components/checkout-section.tsx
+
 "use client"
 
 import { useState } from "react"
@@ -7,6 +9,9 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Button } from "@/components/ui/button"
 import { motion } from "framer-motion"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+
+// 1. Import your cart drawer store
+import { useCartDrawerStore } from "@/store/cartDrawerStore"
 
 const shakeVariant = {
   shake: {
@@ -20,6 +25,9 @@ const CheckoutSection = () => {
   const [shake, setShake] = useState(false)
   const router = useRouter()
 
+  // 2. Get the closeDrawer function from the store
+  const { closeDrawer } = useCartDrawerStore()
+
   const handleCheckout = () => {
     if (!isChecked) {
       setShake(true)
@@ -27,6 +35,9 @@ const CheckoutSection = () => {
       return
     }
 
+    // 3. Call closeDrawer() BEFORE navigating
+    closeDrawer()
+    
     router.push("/checkout")
   }
 
