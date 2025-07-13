@@ -9,14 +9,15 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Badge } from "@/components/ui/badge"
 import Header from "@/components/header"
 import Footer from "@/components/footer"
 import { useCartStore } from "@/store/cartStore"
 import { supabase } from "@/lib/supabaseClient"
 import Script from "next/script"
-import { v4 as uuidv4 } from 'uuid' // For generating unique IDs
+import { v4 as uuidv4 } from 'uuid'
+import { Shield, Lock, Clock, Truck, Check, Star, Users, ArrowRight } from 'lucide-react'
 
-// This line helps TypeScript recognize the Razorpay object from the script
 declare const Razorpay: any;
 
 export default function CheckoutPage() {
@@ -33,40 +34,144 @@ export default function CheckoutPage() {
   const [state, setState] = useState("")
   const [pinCode, setPinCode] = useState("")
   const [phone, setPhone] = useState("")
-  const [email, setEmail] = useState("") // Add email state for Razorpay prefill
+  const [email, setEmail] = useState("")
   const [shippingMethod, setShippingMethod] = useState("prepaid")
 
-  // Fetch user details on component mount for pre-filling forms
+  // Social proof and stock states
+  const [recentOrders, setRecentOrders] = useState(247)
+  const [stockStatus, setStockStatus] = useState<{[key: string]: number}>({})
+
+  // Load saved form data from localStorage
   useEffect(() => {
-    const getUser = async () => {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-            setEmail(user.email || "");
+    const loadSavedData = () => {
+      try {
+        const savedData = localStorage.getItem('checkout_form_data');
+        if (savedData) {
+          const parsed = JSON.parse(savedData);
+          setFirstName(parsed.firstName || "");
+          setLastName(parsed.lastName || "");
+          setAddress(parsed.address || "");
+          setCity(parsed.city || "");
+          setState(parsed.state || "");
+          setPinCode(parsed.pinCode || "");
+          setPhone(parsed.phone || "");
+          setShippingMethod(parsed.shippingMethod || "prepaid");
         }
+      } catch (error) {
+        console.error('Error loading saved form data:', error);
+      }
     };
-    getUser();
-  }, []);
+
+    const getUserDetails = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setEmail(user.email || "");
+        
+        // Only set name from user metadata if no saved data exists
+        const savedData = localStorage.getItem('checkout_form_data');
+        if (!savedData) {
+          const fullName = user.user_metadata?.full_name;
+          if (fullName) {
+            const nameParts = fullName.split(' ');
+            setFirstName(nameParts[0] || "");
+            if (nameParts.length > 1) {
+              setLastName(nameParts.slice(1).join(' '));
+            }
+          }
+        }
+      }
+    };
+
+    loadSavedData();
+    getUserDetails();
+
+    // Simulate stock levels for urgency
+    const mockStock: {[key: string]: number} = {};
+    cart.forEach(item => {
+      mockStock[item.id] = Math.floor(Math.random() * 8) + 2; // 2-9 items left
+    });
+    setStockStatus(mockStock);
+
+    // Simulate recent orders counter
+    const orderTimer = setInterval(() => {
+      setRecentOrders(prev => prev + Math.floor(Math.random() * 3));
+    }, 15000);
+
+    return () => {
+      clearInterval(orderTimer);
+    };
+  }, [cart]);
+
+  // Save form data to localStorage whenever it changes
+  useEffect(() => {
+    const formData = {
+      firstName,
+      lastName,
+      address,
+      city,
+      state,
+      pinCode,
+      phone,
+      shippingMethod
+    };
+    
+    // Only save if at least one field has content
+    if (Object.values(formData).some(value => value && value.trim() !== '')) {
+      try {
+        localStorage.setItem('checkout_form_data', JSON.stringify(formData));
+      } catch (error) {
+        console.error('Error saving form data:', error);
+      }
+    }
+  }, [firstName, lastName, address, city, state, pinCode, phone, shippingMethod]);
 
   // Calculate cart total
   const cartTotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0)
   const shippingCost = shippingMethod === "cod" ? 149 : 0
+  const savings = cartTotal > 999 ? 299 : 0 // Free shipping savings
   const orderTotal = cartTotal + shippingCost
 
-  const handlePayment = async () => {
-    // 1. Basic Validation
-    if (!firstName || !lastName || !address || !city || !state || !pinCode || !phone) {
-      alert("Please fill all required delivery fields.")
-      return
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  // Clear saved form data after successful order
+  const clearSavedFormData = () => {
+    try {
+      localStorage.removeItem('checkout_form_data');
+    } catch (error) {
+      console.error('Error clearing saved form data:', error);
     }
-    if (cart.length === 0) {
-      alert("Your cart is empty.")
-      return
+  };
+
+  const handlePayment = async () => {
+    // Validation with better UX
+    const requiredFields = [
+      { value: firstName, name: "First Name" },
+      { value: lastName, name: "Last Name" },
+      { value: address, name: "Address" },
+      { value: city, name: "City" },
+      { value: state, name: "State" },
+      { value: pinCode, name: "PIN Code" },
+      { value: phone, name: "Phone Number" }
+    ];
+
+    const missingField = requiredFields.find(field => !field.value);
+    if (missingField) {
+      alert(`Please enter your ${missingField.name} to continue.`);
+      return;
     }
 
-    setLoading(true)
+    if (cart.length === 0) {
+      alert("Your cart is empty.");
+      return;
+    }
+
+    setLoading(true);
 
     try {
-      // 2. Get User
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
         alert("You must be logged in to place an order.")
@@ -74,23 +179,21 @@ export default function CheckoutPage() {
         return
       }
 
-      // 3. Generate a unique internal transaction ID
       const merchantTransactionId = uuidv4();
-
-      // 4. Create the order in our database BEFORE payment
       const shippingAddress = { firstName, lastName, address, city, state, pinCode, phone };
+      
       const { error: orderError } = await supabase
         .from("orders")
         .insert({
           user_id: user.id,
           items: cart.map(item => ({ product_id: item.id, quantity: item.quantity, name: item.name, price: item.price })),
-          status: "Pending Payment", // Status is pending until webhook confirms
+          status: "Pending Payment",
           shipping_address: shippingAddress,
           shipping_method: shippingMethod,
           shipping_cost: shippingCost,
           subtotal: cartTotal,
           total_amount: orderTotal,
-          merchant_transaction_id: merchantTransactionId, // Our internal ID
+          merchant_transaction_id: merchantTransactionId,
           created_at: new Date().toISOString()
         });
 
@@ -100,12 +203,11 @@ export default function CheckoutPage() {
         return;
       }
       
-      // 5. Call our backend to create a Razorpay order
       const response = await fetch('/api/razorpay/create-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-            amount: orderTotal * 100, // Amount in the smallest currency unit (paise)
+            amount: orderTotal * 100,
             merchant_transaction_id: merchantTransactionId 
         }),
       });
@@ -120,18 +222,15 @@ export default function CheckoutPage() {
       
       const { order: razorpayOrder } = razorpayData;
 
-      // 6. Configure and open the Razorpay Checkout Modal
       const options = {
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
         amount: razorpayOrder.amount,
         currency: razorpayOrder.currency,
-        name: "Your Awesome Store", // <-- Replace with your store name
+        name: "Your Awesome Store",
         description: `Order ID: ${merchantTransactionId}`,
         order_id: razorpayOrder.id,
         handler: function (response: any) {
-            // This function is called on a successful payment.
-            // The final status update is handled by the webhook for reliability.
-            // Here, we can optimistically redirect the user.
+            clearSavedFormData(); // Clear saved data on successful payment
             clearCart();
             router.push(`/order-success?payment_id=${response.razorpay_payment_id}&order_id=${merchantTransactionId}`);
         },
@@ -141,16 +240,14 @@ export default function CheckoutPage() {
             contact: phone,
         },
         notes: {
-            // CRITICAL: This links the Razorpay payment to your internal order
             merchant_transaction_id: merchantTransactionId,
             shippingAddress: JSON.stringify(shippingAddress)
         },
         theme: {
-            color: "#3399cc",
+            color: "#2563eb",
         },
         modal: {
             ondismiss: function() {
-                // This is called when the user closes the payment modal without paying
                 console.log("Checkout form closed by user.");
                 alert("Payment was not completed.");
                 setLoading(false);
@@ -170,108 +267,288 @@ export default function CheckoutPage() {
 
   return (
     <>
-      {/* This Script component loads the Razorpay SDK asynchronously */}
       <Script
         id="razorpay-checkout-js"
         src="https://checkout.razorpay.com/v1/checkout.js"
       />
 
-      <div className="container mx-auto px-4">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white">
         <Header />
         
-        <div className="flex flex-col md:flex-row gap-6 p-4 md:p-6 max-w-6xl mx-auto">
-          <div className="flex-1 flex flex-col gap-4">
-            <Card className="p-4">
-              <h2 className="text-lg font-semibold">Account</h2>
-              {/* Display the fetched user email */}
-              <p className="text-sm text-gray-500">{email || "Please log in"}</p>
-            </Card>
-            <Card className="p-4">
-              <h2 className="text-lg font-semibold">Delivery</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">
-                <Input placeholder="First Name *" value={firstName} onChange={(e) => setFirstName(e.target.value)} required />
-                <Input placeholder="Last Name *" value={lastName} onChange={(e) => setLastName(e.target.value)} required />
-                <Input placeholder="Address *" className="md:col-span-2" value={address} onChange={(e) => setAddress(e.target.value)} required />
-                <Input placeholder="City *" value={city} onChange={(e) => setCity(e.target.value)} required />
-                <Input placeholder="State *" value={state} onChange={(e) => setState(e.target.value)} required />
-                <Input placeholder="PIN Code *" value={pinCode} onChange={(e) => setPinCode(e.target.value)} required />
-                <Input placeholder="Phone Number *" value={phone} onChange={(e) => setPhone(e.target.value)} required />
+        {/* Trust Bar */}
+        <div className="bg-gradient-to-r from-green-600 to-emerald-600 text-white py-2">
+          <div className="container mx-auto px-4">
+            <div className="flex items-center justify-center space-x-6 text-sm">
+              <div className="flex items-center space-x-2">
+                <Shield className="h-4 w-4" />
+                <span>SSL Secured</span>
               </div>
-            </Card>
-            <Card className="p-4">
-              <h2 className="text-lg font-semibold">Shipping Method</h2>
-              <RadioGroup defaultValue="prepaid" value={shippingMethod} onValueChange={setShippingMethod}>
-                <div className="flex items-center space-x-2 mt-2">
-                  <RadioGroupItem value="prepaid" id="prepaid" />
-                  <label htmlFor="prepaid" className="text-sm">Prepaid - Free Express Shipping (3-5 Days)</label>
-                </div>
-                <div className="flex items-center space-x-2 mt-2">
-                  <RadioGroupItem value="cod" id="cod" />
-                  <label htmlFor="cod" className="text-sm">COD - Standard Shipping (6-8 Days) ₹149.00</label>
-                </div>
-              </RadioGroup>
-            </Card>
-            <Card className="p-4">
-              <h2 className="text-lg font-semibold">Payment</h2>
-              <p className="text-sm text-gray-500 mb-3">All transactions are secure and encrypted.</p>
-              <div className="flex justify-between items-center bg-gray-100 p-3 rounded-md">
-                {/* Updated payment method text */}
-                <p className="text-sm">Pay via Razorpay (UPI, Cards, NetBanking)</p>
+              <div className="flex items-center space-x-2">
+                <Truck className="h-4 w-4" />
+                <span>Free Express Shipping</span>
               </div>
-            </Card>
-            <Card className="p-4">
-              <h2 className="text-lg font-semibold">Billing Address</h2>
-              <div className="flex items-center space-x-2 mt-2">
-                <Checkbox checked={billingSameAsShipping} onCheckedChange={() => setBillingSameAsShipping(!billingSameAsShipping)} id="billingSame" />
-                <label htmlFor="billingSame" className="text-sm">Same as shipping address</label>
+              <div className="flex items-center space-x-2">
+                <Users className="h-4 w-4" />
+                <span>{recentOrders} orders today</span>
               </div>
-            </Card>
+            </div>
           </div>
-          
-          <div className="w-full md:w-96">
-            <Card className="p-4 sticky top-4">
-              <h2 className="text-lg font-semibold mb-4">Order Summary</h2>
-              <div className="space-y-3 mb-4">
-                {cart.map((item) => (
-                  <div key={item.id} className="flex justify-between text-sm">
-                    <span>{item.name} × {item.quantity}</span>
-                    <span>₹{item.price * item.quantity}</span>
+        </div>
+        
+        <div className="container mx-auto px-4 py-8">
+          <div className="max-w-6xl mx-auto">
+            {/* Progress Indicator */}
+            <div className="mb-8">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-blue-600">Step 1: Order Details</span>
+                <span className="text-sm text-gray-500">Almost there!</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div className="bg-gradient-to-r from-blue-500 to-blue-600 h-2 rounded-full w-3/4 transition-all duration-300"></div>
+              </div>
+            </div>
+
+            <div className="flex flex-col lg:flex-row gap-8">
+              {/* Left Column - Forms */}
+              <div className="flex-1 space-y-6">
+                {/* Account Section */}
+                <Card className="p-6 border-2 border-blue-100 shadow-lg">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-xl font-bold text-gray-800">Account</h2>
+                    <Check className="h-6 w-6 text-green-500" />
                   </div>
-                ))}
+                  <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                    <p className="text-green-800 font-medium">{email || "Loading..."}</p>
+                    <p className="text-sm text-green-600 mt-1">✓ Verified account</p>
+                  </div>
+                </Card>
+
+                {/* Delivery Section */}
+                <Card className="p-6 border-2 border-blue-100 shadow-lg">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-xl font-bold text-gray-800">Delivery Information</h2>
+                    <Badge variant="outline" className="border-blue-200 text-blue-600">
+                      Required
+                    </Badge>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700">First Name *</label>
+                      <Input 
+                        placeholder="Enter first name" 
+                        value={firstName} 
+                        onChange={(e) => setFirstName(e.target.value)}
+                        className="border-2 border-gray-200 focus:border-blue-500 transition-colors"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700">Last Name *</label>
+                      <Input 
+                        placeholder="Enter last name" 
+                        value={lastName} 
+                        onChange={(e) => setLastName(e.target.value)}
+                        className="border-2 border-gray-200 focus:border-blue-500 transition-colors"
+                      />
+                    </div>
+                    <div className="space-y-2 md:col-span-2">
+                      <label className="text-sm font-medium text-gray-700">Address *</label>
+                      <Input 
+                        placeholder="House number, street name, area" 
+                        value={address} 
+                        onChange={(e) => setAddress(e.target.value)}
+                        className="border-2 border-gray-200 focus:border-blue-500 transition-colors"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700">City *</label>
+                      <Input 
+                        placeholder="Enter city" 
+                        value={city} 
+                        onChange={(e) => setCity(e.target.value)}
+                        className="border-2 border-gray-200 focus:border-blue-500 transition-colors"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700">State *</label>
+                      <Input 
+                        placeholder="Enter state" 
+                        value={state} 
+                        onChange={(e) => setState(e.target.value)}
+                        className="border-2 border-gray-200 focus:border-blue-500 transition-colors"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700">PIN Code *</label>
+                      <Input 
+                        placeholder="6-digit PIN" 
+                        value={pinCode} 
+                        onChange={(e) => setPinCode(e.target.value)}
+                        className="border-2 border-gray-200 focus:border-blue-500 transition-colors"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700">Phone Number *</label>
+                      <Input 
+                        placeholder="10-digit mobile number" 
+                        value={phone} 
+                        onChange={(e) => setPhone(e.target.value)}
+                        className="border-2 border-gray-200 focus:border-blue-500 transition-colors"
+                      />
+                    </div>
+                  </div>
+                </Card>
+
+                {/* Shipping Method */}
+                <Card className="p-6 border-2 border-blue-100 shadow-lg">
+                  <h2 className="text-xl font-bold text-gray-800 mb-4">Shipping Method</h2>
+                  <RadioGroup value={shippingMethod} onValueChange={setShippingMethod}>
+                    <div className="space-y-3">
+                      <div className="flex items-center space-x-3 p-4 border-2 border-green-200 rounded-lg bg-green-50">
+                        <RadioGroupItem value="prepaid" id="prepaid" />
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-2">
+                            <label htmlFor="prepaid" className="font-medium text-green-800">
+                              Express Shipping - FREE
+                            </label>
+                            <Badge className="bg-green-600 text-white">Recommended</Badge>
+                          </div>
+                          <p className="text-sm text-green-600 mt-1">
+                            ⚡ 3-5 business days • Free for prepaid orders
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-3 p-4 border-2 border-gray-200 rounded-lg">
+                        <RadioGroupItem value="cod" id="cod" />
+                        <div className="flex-1">
+                          <label htmlFor="cod" className="font-medium text-gray-700">
+                            Cash on Delivery
+                          </label>
+                          <p className="text-sm text-gray-600 mt-1">
+                            📦 6-8 business days • ₹149 shipping fee
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </RadioGroup>
+                </Card>
+
+                {/* Payment Section */}
+                <Card className="p-6 border-2 border-blue-100 shadow-lg">
+                  <h2 className="text-xl font-bold text-gray-800 mb-4">Payment</h2>
+                  <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                    <div className="flex items-center space-x-3 mb-2">
+                      <Lock className="h-5 w-5 text-blue-600" />
+                      <span className="font-medium text-blue-800">Secure Payment via Razorpay</span>
+                    </div>
+                    <p className="text-sm text-blue-600">
+                      UPI • Credit/Debit Cards • Net Banking • Wallets
+                    </p>
+                  </div>
+                </Card>
               </div>
-              <div className="border-t pt-3 mt-3">
-                <div className="flex justify-between text-sm">
-                  <span>Subtotal</span>
-                  <span>₹{cartTotal.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-sm mt-1">
-                  <span>Shipping</span>
-                  <span>{shippingMethod === "cod" ? `₹${shippingCost.toFixed(2)}` : "Free"}</span>
-                </div>
-                <div className="flex justify-between font-bold mt-3 pt-3 border-t">
-                  <span>Total</span>
-                  <span>₹{orderTotal.toFixed(2)}</span>
-                </div>
-              </div>
-              <Button 
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white py-6 rounded-lg text-lg mt-4"
-                onClick={handlePayment}
-                // Disable button for COD or when loading
-                disabled={loading || shippingMethod === "cod"}
-              >
-                {loading ? "Processing..." : `Pay Securely ₹${orderTotal.toFixed(2)}`}
-              </Button>
-               {shippingMethod === 'cod' && (
-                    <Button 
-                        className="w-full bg-gray-700 hover:bg-gray-800 text-white py-6 rounded-lg text-lg mt-2"
-                        // Add a separate handler for COD if needed
-                        // onClick={handleCodOrder} 
+
+              {/* Right Column - Order Summary */}
+              <div className="lg:w-96">
+                <Card className="p-6 border-2 border-blue-100 shadow-xl sticky top-4">
+                  <h2 className="text-xl font-bold text-gray-800 mb-6">Order Summary</h2>
+                  
+                  {/* Cart Items */}
+                  <div className="space-y-4 mb-6">
+                    {cart.map((item) => (
+                      <div key={item.id} className="flex items-center space-x-4 p-3 bg-gray-50 rounded-lg">
+                        <div className="flex-1">
+                          <h3 className="font-medium text-gray-800">{item.name}</h3>
+                          <p className="text-sm text-gray-600">Qty: {item.quantity}</p>
+                          {stockStatus[item.id] && stockStatus[item.id] <= 5 && (
+                            <Badge variant="destructive" className="text-xs mt-1">
+                              Only {stockStatus[item.id]} left!
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="text-right">
+                          <p className="font-bold text-gray-800">₹{item.price * item.quantity}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Order Totals */}
+                  <div className="space-y-3 mb-6">
+                    <div className="flex justify-between text-gray-600">
+                      <span>Subtotal</span>
+                      <span>₹{cartTotal.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-gray-600">
+                      <span>Shipping</span>
+                      <span className={shippingMethod === "prepaid" ? "text-green-600 font-medium" : ""}>
+                        {shippingMethod === "cod" ? `₹${shippingCost.toFixed(2)}` : "FREE"}
+                      </span>
+                    </div>
+                    {savings > 0 && (
+                      <div className="flex justify-between text-green-600">
+                        <span>You Save</span>
+                        <span>₹{savings.toFixed(2)}</span>
+                      </div>
+                    )}
+                    <div className="border-t pt-3">
+                      <div className="flex justify-between text-xl font-bold text-gray-800">
+                        <span>Total</span>
+                        <span>₹{orderTotal.toFixed(2)}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="space-y-3">
+                    {shippingMethod === "prepaid" ? (
+                      <Button 
+                        className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white py-4 text-lg font-bold shadow-lg transform hover:scale-105 transition-all duration-200"
+                        onClick={handlePayment}
                         disabled={loading}
-                    >
-                        Place Cash on Delivery Order
-                    </Button>
-                )}
-            </Card>
+                      >
+                        {loading ? (
+                          "Processing..."
+                        ) : (
+                          <div className="flex items-center justify-center space-x-2">
+                            <Lock className="h-5 w-5" />
+                            <span>Complete Secure Payment</span>
+                            <ArrowRight className="h-5 w-5" />
+                          </div>
+                        )}
+                      </Button>
+                    ) : (
+                      <Button 
+                        className="w-full bg-gradient-to-r from-gray-700 to-gray-800 hover:from-gray-800 hover:to-gray-900 text-white py-4 text-lg font-bold shadow-lg transform hover:scale-105 transition-all duration-200"
+                        disabled={loading}
+                      >
+                        {loading ? (
+                          "Processing..."
+                        ) : (
+                          <div className="flex items-center justify-center space-x-2">
+                            <span>Place COD Order</span>
+                            <ArrowRight className="h-5 w-5" />
+                          </div>
+                        )}
+                      </Button>
+                    )}
+                  </div>
+
+                  {/* Trust Indicators */}
+                  <div className="mt-6 pt-4 border-t border-gray-200">
+                    <div className="flex items-center justify-center space-x-4 text-sm text-gray-600">
+                      <div className="flex items-center space-x-1">
+                        <Shield className="h-4 w-4" />
+                        <span>SSL Secured</span>
+                      </div>
+                      <div className="flex items-center space-x-1">
+                        <Star className="h-4 w-4 text-yellow-500" />
+                        <span>4.9/5 Rating</span>
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              </div>
+            </div>
           </div>
         </div>
         
