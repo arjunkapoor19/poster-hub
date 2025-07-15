@@ -137,10 +137,10 @@ const Header = () => {
           </Link>
           <div className="hidden flex-1 md:flex">
             <nav className="flex items-center space-x-6 text-m font-medium ml-10">
-              <Link href="/shop" className="transition-colors hover:text-foreground/80">Shop</Link>
-              <Link href="/collections" className="transition-colors hover:text-foreground/80">Collections</Link>
+              {/* <Link href="/shop" className="transition-colors hover:text-foreground/80">Shop</Link>
+              <Link href="/collections" className="transition-colors hover:text-foreground/80">Collections</Link> */}
               <Link href="/new" className="transition-colors hover:text-foreground/80">New Arrivals</Link>
-              <Link href="/sale" className="transition-colors hover:text-foreground/80">Sale</Link>
+              {/* <Link href="/sale" className="transition-colors hover:text-foreground/80">Sale</Link> */}
             </nav>
           </div>
           <div className="flex flex-1 items-center justify-end space-x-4">
