@@ -16,7 +16,7 @@ export default function Footer() {
             <ul className="space-y-2 text-sm">
               <li><Link href="/new" className="text-muted-foreground hover:text-foreground">New Arrivals</Link></li>
               {/* <li><Link href="/bestsellers" className="text-muted-foreground hover:text-foreground">Bestsellers</Link></li> */}
-              <li><Link href="/sale" className="text-muted-foreground hover:text-foreground">Sale</Link></li>
+              {/* <li><Link href="/sale" className="text-muted-foreground hover:text-foreground">Sale</Link></li> */}
               <li><Link href="/collections" className="text-muted-foreground hover:text-foreground">Collections</Link></li>
             </ul>
           </div>
