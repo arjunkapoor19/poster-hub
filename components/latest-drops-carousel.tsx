@@ -1,4 +1,4 @@
-// components/LatestDropsCarousel.tsx (Enhanced with image size fix, spacing, and smooth fade effect)
+// components/LatestDropsCarousel.tsx (Modified to show 4 products per view)
 
 "use client"
 
@@ -37,7 +37,7 @@ export default function LatestDropsCarousel() {
   const addToCart = useCartStore((state) => state.addToCart)
   const { openDrawer } = useCartDrawerStore()
 
-  const itemsPerView = isMobile ? 1 : 2
+  const itemsPerView = isMobile ? 2 : 4 // Mobile: 2 products, Desktop: 4 products
   const maxIndex = data.length > 0 ? data.length - itemsPerView : 0
 
   useEffect(() => {
@@ -131,7 +131,8 @@ export default function LatestDropsCarousel() {
       >
         <div
           ref={carouselRef}
-          className="flex space-x-4 overflow-x-scroll scrollbar-hide snap-x px-2"
+          className="flex space-x-3 overflow-x-scroll scrollbar-hide snap-x px-2"
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {data.map((poster) => {
             const availableImages = getAvailableImages(poster)
@@ -139,21 +140,21 @@ export default function LatestDropsCarousel() {
             return (
               <div
                 key={poster.id}
-                className="flex-none w-full sm:w-[calc(50%-8px)] snap-start"
+                className="flex-none w-[calc(50%-6px)] sm:w-[calc(25%-9px)] snap-start" // Mobile: 50% width (2 products), Desktop: 25% width (4 products)
               >
                 <Card className="overflow-hidden border-0 shadow-none">
                   <CardContent className="p-0">
-                    <div className="relative w-full h-[400px] flex items-center justify-center">
-                      <div className="relative w-[220px] h-[340px] perspective-[1000px]">
+                    <div className="relative w-full h-[280px] sm:h-[320px] flex items-center justify-center"> {/* Mobile: 280px, Desktop: 320px */}
+                      <div className="relative w-[140px] h-[220px] sm:w-[180px] sm:h-[280px] perspective-[1000px]"> {/* Mobile: smaller dimensions, Desktop: larger */}
                         {availableImages.map((img, i) => {
                           const center = carouselRotation
                           const offset = i - center
                           return (
                             <div
                               key={i}
-                              className="absolute w-[220px] h-[340px] transition-all duration-700 ease-in-out"
+                              className="absolute w-[140px] h-[220px] sm:w-[180px] sm:h-[280px] transition-all duration-700 ease-in-out"
                               style={{
-                                transform: `translateX(${offset * 70}px) scale(${1 - Math.abs(offset) * 0.15}) rotateY(${offset * 20}deg)`,
+                                transform: `translateX(${offset * (isMobile ? 40 : 55)}px) scale(${1 - Math.abs(offset) * 0.15}) rotateY(${offset * 20}deg)`, // Smaller offset for mobile
                                 zIndex: 10 - Math.abs(offset),
                                 opacity: 1 - Math.abs(offset) * 0.3,
                               }}
@@ -173,13 +174,13 @@ export default function LatestDropsCarousel() {
                     </div>
                   </CardContent>
 
-                  <CardFooter className="flex flex-col p-3 pt-4 items-center space-y-2">
-                    <Link href={`/product/${poster.id}`} className="font-medium hover:underline text-center">
+                  <CardFooter className="flex flex-col p-2 pt-3 items-center space-y-1.5"> {/* Reduced padding and spacing */}
+                    <Link href={`/product/${poster.id}`} className="font-medium hover:underline text-center text-sm"> {/* Made text smaller */}
                       {poster.title}
                     </Link>
-                    <p className="text-sm text-muted-foreground">₹{poster.price.toFixed(2)}</p>
+                    <p className="text-xs text-muted-foreground">₹{poster.price.toFixed(2)}</p> {/* Made text smaller */}
                     <Button
-                      className="flex flex-grow-1 mt-3 w-full font-bold"
+                      className="flex flex-grow-1 mt-2 w-full font-bold text-xs h-8" // Made button smaller
                       onClick={() => handleAddToCart(poster)}
                     >
                       Add to Cart

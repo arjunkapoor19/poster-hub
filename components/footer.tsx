@@ -15,8 +15,8 @@ export default function Footer() {
             <h3 className="mb-4 text-lg font-semibold">Shop</h3>
             <ul className="space-y-2 text-sm">
               <li><Link href="/new" className="text-muted-foreground hover:text-foreground">New Arrivals</Link></li>
-              {/* <li><Link href="/bestsellers" className="text-muted-foreground hover:text-foreground">Bestsellers</Link></li> */}
-              {/* <li><Link href="/sale" className="text-muted-foreground hover:text-foreground">Sale</Link></li> */}
+              <li><Link href="/bestsellers" className="text-muted-foreground hover:text-foreground">Bestsellers</Link></li>
+              <li><Link href="/sale" className="text-muted-foreground hover:text-foreground">Sale</Link></li>
               <li><Link href="/collections" className="text-muted-foreground hover:text-foreground">Collections</Link></li>
             </ul>
           </div>
@@ -31,16 +31,16 @@ export default function Footer() {
               <li><Link href="/contact" className="text-muted-foreground hover:text-foreground">Contact Us</Link></li>
             </ul>
           </div>
-          {/* <div>
+          <div>
             <h3 className="mb-4 text-lg font-semibold">About</h3>
             <ul className="space-y-2 text-sm">
               <li><Link href="/about" className="text-muted-foreground hover:text-foreground">Our Story</Link></li>
               <li><Link href="/careers" className="text-muted-foreground hover:text-foreground">Careers</Link></li>
             </ul>
-          </div> */}
+          </div>
           <div>
             <h3 className="mb-4 text-lg font-semibold">Connect</h3>
-            {/* <div className="flex space-x-4">
+            <div className="flex space-x-4">
               <Link href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground">
                 <Instagram className="h-5 w-5" />
                 <span className="sr-only">Instagram</span>
@@ -53,7 +53,7 @@ export default function Footer() {
                 <Twitter className="h-5 w-5" />
                 <span className="sr-only">Twitter</span>
               </Link>
-            </div> */}
+            </div>
             <div className="mt-4">
               <h4 className="mb-2 text-sm font-medium">Subscribe to our newsletter</h4>
               <div className="flex max-w-sm flex-col space-y-2 sm:flex-row sm:space-x-2 sm:space-y-0">

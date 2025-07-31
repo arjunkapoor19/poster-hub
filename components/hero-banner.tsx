@@ -36,7 +36,7 @@ export default function HeroBanner() {
             <p className="text-white">Exclusive limited edition prints to brighten your space</p>
             <div className="flex flex-col space-y-2 sm:flex-row sm:space-x-2 sm:space-y-0">
               <Button asChild size="lg" className="w-full sm:w-auto">
-                {/* <Link href="/shop">Shop Now</Link> */}
+                <Link href="/shop">Shop Now</Link>
               </Button>
               <Button asChild variant="outline" size="lg" className="w-full sm:w-auto">
                 <Link href="/collections">View Collections</Link>
