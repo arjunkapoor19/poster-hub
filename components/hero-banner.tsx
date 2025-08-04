@@ -20,8 +20,6 @@ export default function HeroBanner() {
     "https://njrjnitwpwxvgwzawova.supabase.co/storage/v1/object/public/product-images//RonaldoComic.png",
     "https://njrjnitwpwxvgwzawova.supabase.co/storage/v1/object/public/product-images//Magazine-World%20Cup%20Icons.png",
     "https://njrjnitwpwxvgwzawova.supabase.co/storage/v1/object/public/product-images//CopaComic.png",
-    
-    
   ]
 
   useEffect(() => {
@@ -41,11 +39,10 @@ export default function HeroBanner() {
   return (
     <div className="relative w-full h-[100svh] md:h-[90vh] overflow-hidden">
 
-
       {/* Poster Carousel */}
       <div className="absolute inset-0 flex items-center justify-center z-10">
-        <div className="relative mt-[-16vh]">
-          <div className="relative w-[260px] h-[370px] md:w-[285px] md:h-[400px] lg:w-[305px] lg:h-[432px]">
+        <div className="relative mt-[-10vh] md:mt-[-16vh]">
+          <div className="relative w-[200px] h-[285px] sm:w-[240px] sm:h-[330px] md:w-[285px] md:h-[400px] lg:w-[305px] lg:h-[432px]">
             {posters.map((poster, index) => (
               <div key={index} className="absolute inset-0">
                 <Image
@@ -55,7 +52,7 @@ export default function HeroBanner() {
                   className={`object-cover rounded-sm transition-opacity duration-1000 ${
                     index === currentPosterIndex ? "opacity-100" : "opacity-0"
                   }`}
-                  sizes="(max-width: 768px) 240px, (max-width: 1024px) 280px, 300px"
+                  sizes="(max-width: 640px) 200px, (max-width: 768px) 240px, (max-width: 1024px) 280px, 300px"
                 />
                 <div
                   className={`absolute inset-0 rounded-sm bg-gradient-to-br from-transparent via-transparent to-black/20 transition-opacity duration-1000 ${
@@ -79,8 +76,6 @@ export default function HeroBanner() {
           className="object-cover"
         />
       </div>
-
-      {/* Gradient overlay at bottom */}
 
       {/* Text & Buttons Container */}
       <div className="relative z-30 flex flex-col justify-between h-full">
