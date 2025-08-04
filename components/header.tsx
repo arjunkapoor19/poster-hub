@@ -126,6 +126,34 @@ const Header = () => {
 
   return (
     <>
+      <style jsx>{`
+        .shimmer-text {
+          background: linear-gradient(
+            90deg,
+            #000 0%,
+            #000 40%,
+            #fff 50%,
+            #000 60%,
+            #000 100%
+          );
+          background-size: 200% 100%;
+          background-clip: text;
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          animation: shimmer 3s ease-in-out;
+        }
+        
+        @keyframes shimmer {
+          0% {
+            background-position: -200% 0;
+          }
+
+          100% {
+            background-position: 200% 0;
+          }
+        }
+      `}</style>
+
       <header className="sticky top-0 z-50 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 pt-5 pb-3">
         <div className="container flex h-14 items-center pl-0">
           <MobileMenu />
@@ -133,7 +161,7 @@ const Header = () => {
             href="/"
             className="md:mr-4 absolute left-1/2 transform -translate-x-1/2 md:static md:transform-none md:left-0 flex items-center space-x-2"
           >
-            <span className="text-2xl md:text-3xl font-bold md:ml-7">WallStreet</span>
+            <span className="text-2xl md:text-3xl font-bold md:ml-7 shimmer-text">WallStreet</span>
           </Link>
           <div className="hidden flex-1 md:flex">
             <nav className="flex items-center space-x-6 text-m font-medium ml-10">

@@ -175,10 +175,10 @@ export default function LatestDropsCarousel() {
                   </CardContent>
 
                   <CardFooter className="flex flex-col p-2 pt-3 items-center space-y-1.5"> {/* Reduced padding and spacing */}
-                    <Link href={`/product/${poster.id}`} className="font-medium hover:underline text-center text-sm"> {/* Made text smaller */}
+                    <Link href={`/product/${poster.id}`} className="font-bold hover:underline text-center text-l"> 
                       {poster.title}
                     </Link>
-                    <p className="text-xs text-muted-foreground">₹{poster.price.toFixed(2)}</p> {/* Made text smaller */}
+                    <p className="text-l text-muted-foreground">₹{poster.price.toFixed(2)}</p> 
                     <Button
                       className="flex flex-grow-1 mt-2 w-full font-bold text-xs h-8" // Made button smaller
                       onClick={() => handleAddToCart(poster)}

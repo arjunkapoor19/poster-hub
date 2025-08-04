@@ -96,7 +96,7 @@ export default function ProductPage() {
                 
           </p>
 
-          <div className="text-sm mt-3">Taxes included. Shipping calculated at checkout.</div>
+          <div className="text-sm mt-3">Taxes included. Shipping calculated at u .</div>
 
           <div className="pt-5">
           Size:
