@@ -12,9 +12,16 @@ export default function HeroBanner() {
   const [currentPosterIndex, setCurrentPosterIndex] = useState(0)
 
   const posters = [
-    "https://njrjnitwpwxvgwzawova.supabase.co/storage/v1/object/public/product-images//ChelseaComic.png",
-    "https://njrjnitwpwxvgwzawova.supabase.co/storage/v1/object/public/product-images//CopaComic.png",
+    "https://njrjnitwpwxvgwzawova.supabase.co/storage/v1/object/public/product-images//HaalandComic.png",    
+    "https://njrjnitwpwxvgwzawova.supabase.co/storage/v1/object/public/product-images//Argentina%20Logo-compressed.png",
+    "https://njrjnitwpwxvgwzawova.supabase.co/storage/v1/object/public/product-images//Magazine-442%20beckham.jpeg",
+    "https://njrjnitwpwxvgwzawova.supabase.co/storage/v1/object/public/product-images//TravisCircusMaximus.png",
     "https://njrjnitwpwxvgwzawova.supabase.co/storage/v1/object/public/product-images//WCSemiComic.png",
+    "https://njrjnitwpwxvgwzawova.supabase.co/storage/v1/object/public/product-images//RonaldoComic.png",
+    "https://njrjnitwpwxvgwzawova.supabase.co/storage/v1/object/public/product-images//Magazine-World%20Cup%20Icons.png",
+    "https://njrjnitwpwxvgwzawova.supabase.co/storage/v1/object/public/product-images//CopaComic.png",
+    
+    
   ]
 
   useEffect(() => {
