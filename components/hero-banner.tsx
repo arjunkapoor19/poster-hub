@@ -11,19 +11,18 @@ export default function HeroBanner() {
   const [loaded, setLoaded] = useState(false)
   const [currentPosterIndex, setCurrentPosterIndex] = useState(0)
 
-  const baseUrl = "https://njrjnitwpwxvgwzawova.supabase.co/storage/v1/render/image/public/product-images"
-  const rawPosters = [
-    "HaalandComic.png",
-    "Argentina%20Logo-compressed.png",
-    "Magazine-442%20beckham.jpeg",
-    "TravisCircusMaximus.png",
-    "WCSemiComic.png",
-    "RonaldoComic.png",
-    "Magazine-World%20Cup%20Icons.png",
-    "CopaComic.png",
+  const posters = [
+    "https://njrjnitwpwxvgwzawova.supabase.co/storage/v1/object/public/product-images//HaalandComic.png",    
+    "https://njrjnitwpwxvgwzawova.supabase.co/storage/v1/object/public/product-images//Argentina%20Logo-compressed.png",
+    "https://njrjnitwpwxvgwzawova.supabase.co/storage/v1/object/public/product-images//Magazine-442%20beckham.jpeg",
+    "https://njrjnitwpwxvgwzawova.supabase.co/storage/v1/object/public/product-images//TravisCircusMaximus.png",
+    "https://njrjnitwpwxvgwzawova.supabase.co/storage/v1/object/public/product-images//WCSemiComic.png",
+    "https://njrjnitwpwxvgwzawova.supabase.co/storage/v1/object/public/product-images//RonaldoComic.png",
+    "https://njrjnitwpwxvgwzawova.supabase.co/storage/v1/object/public/product-images//Magazine-World%20Cup%20Icons.png",
+    "https://njrjnitwpwxvgwzawova.supabase.co/storage/v1/object/public/product-images//CopaComic.png",
+    
+    
   ]
-
-  const posters = rawPosters.map((file) => `${baseUrl}/${file}?width=400&quality=80`)
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -42,21 +41,21 @@ export default function HeroBanner() {
   return (
     <div className="relative w-full h-[100svh] md:h-[90vh] overflow-hidden">
 
+
       {/* Poster Carousel */}
       <div className="absolute inset-0 flex items-center justify-center z-10">
-        <div className="relative mt-[-10vh] md:mt-[-16vh]">
-          <div className="relative w-[200px] h-[285px] sm:w-[240px] sm:h-[330px] md:w-[285px] md:h-[400px] lg:w-[305px] lg:h-[432px]">
+        <div className="relative mt-[-16vh]">
+          <div className="relative w-[260px] h-[370px] md:w-[285px] md:h-[400px] lg:w-[305px] lg:h-[432px]">
             {posters.map((poster, index) => (
               <div key={index} className="absolute inset-0">
                 <Image
                   src={poster}
                   alt={`Poster ${index + 1}`}
                   fill
-                  priority={index === 0}
                   className={`object-cover rounded-sm transition-opacity duration-1000 ${
                     index === currentPosterIndex ? "opacity-100" : "opacity-0"
                   }`}
-                  sizes="(max-width: 640px) 200px, (max-width: 768px) 240px, (max-width: 1024px) 280px, 300px"
+                  sizes="(max-width: 768px) 240px, (max-width: 1024px) 280px, 300px"
                 />
                 <div
                   className={`absolute inset-0 rounded-sm bg-gradient-to-br from-transparent via-transparent to-black/20 transition-opacity duration-1000 ${
@@ -72,7 +71,7 @@ export default function HeroBanner() {
       {/* Transparent Frame */}
       <div className="absolute inset-0 z-20 pointer-events-none">
         <Image
-          src="/MockUp.png"
+          src="https://njrjnitwpwxvgwzawova.supabase.co/storage/v1/object/sign/assets/MockUp.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8wMGFhYzI0ZC1lNGM1LTRkMzItOWVkMS0wMWNiOTZlMWRjNjQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhc3NldHMvTW9ja1VwLnBuZyIsImlhdCI6MTc1NDMwNTYyNCwiZXhwIjo0OTA3OTA1NjI0fQ.hts3EjqjDXZitS4dJmD6maZdwBeHyMvc9tPVHGaCWLw"
           alt="Picture Frame Overlay"
           fill
           priority
@@ -80,6 +79,8 @@ export default function HeroBanner() {
           className="object-cover"
         />
       </div>
+
+      {/* Gradient overlay at bottom */}
 
       {/* Text & Buttons Container */}
       <div className="relative z-30 flex flex-col justify-between h-full">
