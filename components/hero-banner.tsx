@@ -11,16 +11,19 @@ export default function HeroBanner() {
   const [loaded, setLoaded] = useState(false)
   const [currentPosterIndex, setCurrentPosterIndex] = useState(0)
 
-  const posters = [
-    "https://njrjnitwpwxvgwzawova.supabase.co/storage/v1/object/public/product-images//HaalandComic.png",    
-    "https://njrjnitwpwxvgwzawova.supabase.co/storage/v1/object/public/product-images//Argentina%20Logo-compressed.png",
-    "https://njrjnitwpwxvgwzawova.supabase.co/storage/v1/object/public/product-images//Magazine-442%20beckham.jpeg",
-    "https://njrjnitwpwxvgwzawova.supabase.co/storage/v1/object/public/product-images//TravisCircusMaximus.png",
-    "https://njrjnitwpwxvgwzawova.supabase.co/storage/v1/object/public/product-images//WCSemiComic.png",
-    "https://njrjnitwpwxvgwzawova.supabase.co/storage/v1/object/public/product-images//RonaldoComic.png",
-    "https://njrjnitwpwxvgwzawova.supabase.co/storage/v1/object/public/product-images//Magazine-World%20Cup%20Icons.png",
-    "https://njrjnitwpwxvgwzawova.supabase.co/storage/v1/object/public/product-images//CopaComic.png",
+  const baseUrl = "https://njrjnitwpwxvgwzawova.supabase.co/storage/v1/render/image/public/product-images"
+  const rawPosters = [
+    "HaalandComic.png",
+    "Argentina%20Logo-compressed.png",
+    "Magazine-442%20beckham.jpeg",
+    "TravisCircusMaximus.png",
+    "WCSemiComic.png",
+    "RonaldoComic.png",
+    "Magazine-World%20Cup%20Icons.png",
+    "CopaComic.png",
   ]
+
+  const posters = rawPosters.map((file) => `${baseUrl}/${file}?width=400&quality=80`)
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -49,6 +52,7 @@ export default function HeroBanner() {
                   src={poster}
                   alt={`Poster ${index + 1}`}
                   fill
+                  priority={index === 0}
                   className={`object-cover rounded-sm transition-opacity duration-1000 ${
                     index === currentPosterIndex ? "opacity-100" : "opacity-0"
                   }`}
