@@ -113,7 +113,7 @@ export default function HeroBanner() {
       {/* Transparent Frame */}
       <div className="absolute inset-0 z-20 pointer-events-none">
         <Image
-          src="https://c7t7lgq8e6.ufs.sh/f/tzsGLcy3BVWq50M4NTeOyumEnxJvHCskZYeUwX0pctNfAB6G"
+          src="https://c7t7lgq8e6.ufs.sh/f/tzsGLcy3BVWqoV6t9b0GO3hBS5J2gnZDivTW9AFtrYX4qdwH"
           alt="Picture Frame Overlay"
           fill
           priority
