@@ -13,7 +13,7 @@ const montserrat = Montserrat({
   });
 
 export const metadata: Metadata = {
-  title: 'PosterPlug',
+  title: 'TheWallStreet',
   description: 'Discover stunning, high-quality posters at unbeatable prices! 🌟 Elevate your space with our vast collection of aesthetic, vintage, motivational, and custom posters. Shop now for fast shipping, exclusive designs, and budget-friendly deals!',
   generator: 'Arjun Kapoor',
 }

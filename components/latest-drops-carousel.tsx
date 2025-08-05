@@ -1,5 +1,3 @@
-// components/LatestDropsCarousel.tsx (Modified to show 4 products per view)
-
 "use client"
 
 import type React from "react"
@@ -17,19 +15,21 @@ import { useCartStore } from "@/store/cartStore"
 import { AddToCartModal } from "./ui/add-to-cart-modal"
 import { useCartDrawerStore } from "@/store/cartDrawerStore"
 
-// Poster type
-
-type Poster = {
-  id: string
+type Collection = {
+  id: string | number
   title: string
-  image: string | null
+  price: number
+  latest: boolean
+  image_1?: string | null
   image_2?: string | null
   image_3?: string | null
-  price: number
+  image_4?: string | null
+  image_5?: string | null
+  collection_type: number // Fixed here
 }
 
 export default function LatestDropsCarousel() {
-  const [data, setData] = useState<Poster[]>([])
+  const [data, setData] = useState<Collection[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const carouselRef = useRef<HTMLDivElement>(null)
@@ -37,24 +37,21 @@ export default function LatestDropsCarousel() {
   const addToCart = useCartStore((state) => state.addToCart)
   const { openDrawer } = useCartDrawerStore()
 
-  const itemsPerView = isMobile ? 2 : 4 // Mobile: 2 products, Desktop: 4 products
-  const maxIndex = data.length > 0 ? data.length - itemsPerView : 0
+  const itemsPerView = isMobile ? 2 : 4
+  const maxIndex = data.length > 0 ? Math.max(0, data.length - itemsPerView) : 0
 
   useEffect(() => {
     const fetchData = async () => {
-      try {
-        const { data: fetchedData, error } = await supabase
-          .from("products")
-          .select("*")
-          .eq("latest", true)
+      const { data: fetchedData, error } = await supabase
+        .from("packs")
+        .select("*")
+        .eq("latest", true)
 
-        if (error) {
-          console.error("Error fetching data:", error)
-        } else {
-          setData(fetchedData || [])
-        }
-      } catch (err) {
-        console.error("Unexpected error:", err)
+      if (error) {
+        console.error("Error fetching data:", error)
+      } else {
+        console.log("Fetched collections:", fetchedData)
+        setData(fetchedData ?? [])
       }
     }
     fetchData()
@@ -67,32 +64,36 @@ export default function LatestDropsCarousel() {
     }
   }, [isModalOpen])
 
-  const [carouselRotation, setCarouselRotation] = useState(0)
+  const [carousel3Rotation, setCarousel3Rotation] = useState(0)
+  const [carousel5Rotation, setCarousel5Rotation] = useState(0)
+
   useEffect(() => {
     const interval = setInterval(() => {
-      setCarouselRotation((prev) => (prev + 1) % 3)
-    }, 1500)
+      setCarousel3Rotation((prev) => (prev + 1) % 3)
+      setCarousel5Rotation((prev) => (prev + 1) % 5)
+    }, 2000)
     return () => clearInterval(interval)
   }, [])
 
   const scrollToIndex = (index: number) => {
-    if (!carouselRef.current) return
+    if (!carouselRef.current || data.length === 0) return
     const newIndex = Math.max(0, Math.min(index, maxIndex))
     setCurrentIndex(newIndex)
-    const itemWidth = carouselRef.current.scrollWidth / (data.length || 1)
+    const itemWidth = carouselRef.current.scrollWidth / data.length
     carouselRef.current.scrollTo({ left: newIndex * itemWidth, behavior: "smooth" })
   }
 
   const handleNext = () => scrollToIndex(currentIndex + 1)
   const handlePrev = () => scrollToIndex(currentIndex - 1)
 
-  const handleAddToCart = (poster: Poster) => {
+  const handleAddToCart = (collection: Collection) => {
+    const firstImage = getAvailableImages(collection)[0]
     addToCart({
-      id: poster.id,
-      name: poster.title,
-      price: poster.price,
+      id: String(collection.id),
+      name: collection.title,
+      price: collection.price,
       quantity: 1,
-      image: poster.image || "/placeholder.svg",
+      image: firstImage,
     })
     setIsModalOpen(true)
     openDrawer()
@@ -100,6 +101,7 @@ export default function LatestDropsCarousel() {
 
   const [touchStart, setTouchStart] = useState<number | null>(null)
   const [touchEnd, setTouchEnd] = useState<number | null>(null)
+
   const handleTouchStart = (e: React.TouchEvent) => setTouchStart(e.targetTouches[0].clientX)
   const handleTouchMove = (e: React.TouchEvent) => setTouchEnd(e.targetTouches[0].clientX)
   const handleTouchEnd = () => {
@@ -111,12 +113,46 @@ export default function LatestDropsCarousel() {
     setTouchEnd(null)
   }
 
-  const getAvailableImages = (poster: Poster): string[] => {
-    const images = [poster.image, poster.image_2, poster.image_3].filter(Boolean) as string[]
-    if (images.length === 0) return ["/placeholder.svg", "/placeholder.svg", "/placeholder.svg"]
-    if (images.length === 1) return [images[0], images[0], images[0]]
-    if (images.length === 2) return [images[0], images[1], images[0]]
-    return images.slice(0, 3)
+  const getAvailableImages = (collection: Collection): string[] => {
+    const images = [
+      collection.image_1,
+      collection.image_2,
+      collection.image_3,
+      ...(collection.collection_type === 5 ? [collection.image_4, collection.image_5] : [])
+    ].filter((img): img is string => !!img && img.trim() !== "")
+
+    const total = collection.collection_type === 5 ? 5 : 3
+
+    if (images.length === 0) return Array(total).fill("/placeholder.svg")
+    const result: string[] = []
+    for (let i = 0; i < total; i++) result.push(images[i % images.length])
+    return result
+  }
+
+  const getCarouselRotation = (type: number) => (type === 5 ? carousel5Rotation : carousel3Rotation)
+
+  const getTransformStyle = (offset: number, isMobile: boolean, type: number) => {
+    const is5 = type === 5
+    const baseOffset = is5 ? (isMobile ? 20 : 30) : (isMobile ? 35 : 50)
+    const scale = Math.max(0.6, 1 - Math.abs(offset) * (is5 ? 0.08 : 0.12))
+    const rotateY = offset * (is5 ? 12 : 18)
+    const opacity = Math.max(0.3, 1 - Math.abs(offset) * (is5 ? 0.15 : 0.25))
+    return {
+      transform: `translateX(${offset * baseOffset}px) scale(${scale}) rotateY(${rotateY}deg)`,
+      zIndex: Math.max(1, 10 - Math.abs(offset)),
+      opacity,
+    }
+  }
+
+  if (data.length === 0) {
+    return (
+      <div className="flex flex-col justify-center items-center h-64 space-y-4">
+        <p className="text-muted-foreground">No collections found</p>
+        <p className="text-sm text-muted-foreground">
+          Add some packs to your database with <code>latest = true</code> to see them here
+        </p>
+      </div>
+    )
   }
 
   return (
@@ -132,56 +168,75 @@ export default function LatestDropsCarousel() {
         <div
           ref={carouselRef}
           className="flex space-x-3 overflow-x-scroll scrollbar-hide snap-x px-2"
-          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
         >
-          {data.map((poster) => {
-            const availableImages = getAvailableImages(poster)
+          {data.map((collection) => {
+            const availableImages = getAvailableImages(collection)
+            const rotation = getCarouselRotation(collection.collection_type)
+            const is5 = collection.collection_type === 5
 
             return (
               <div
-                key={poster.id}
-                className="flex-none w-[calc(50%-6px)] sm:w-[calc(25%-9px)] snap-start" // Mobile: 50% width (2 products), Desktop: 25% width (4 products)
+                key={collection.id}
+                className="flex-none w-[calc(50%-6px)] sm:w-[calc(25%-9px)] snap-start"
               >
-                <Card className="overflow-hidden border-0 shadow-none">
+                <Card className="overflow-hidden border-0 shadow-none bg-transparent">
                   <CardContent className="p-0">
-                    <div className="relative w-full h-[280px] sm:h-[320px] flex items-center justify-center"> {/* Mobile: 280px, Desktop: 320px */}
-                      <div className="relative w-[140px] h-[220px] sm:w-[180px] sm:h-[280px] perspective-[1000px]"> {/* Mobile: smaller dimensions, Desktop: larger */}
+                    <div className="relative w-full h-[280px] sm:h-[320px] flex items-center justify-center">
+                      <div
+                        className="relative perspective-[1000px]"
+                        style={{
+                          width: isMobile ? "140px" : "180px",
+                          height: isMobile ? "220px" : "280px",
+                        }}
+                      >
                         {availableImages.map((img, i) => {
-                          const center = carouselRotation
-                          const offset = i - center
+                          const total = availableImages.length
+                          const center = Math.floor(rotation) % total
+                          let offset = i - center
+                          if (offset > total / 2) offset -= total
+                          else if (offset < -total / 2) offset += total
+
                           return (
                             <div
-                              key={i}
-                              className="absolute w-[140px] h-[220px] sm:w-[180px] sm:h-[280px] transition-all duration-700 ease-in-out"
-                              style={{
-                                transform: `translateX(${offset * (isMobile ? 40 : 55)}px) scale(${1 - Math.abs(offset) * 0.15}) rotateY(${offset * 20}deg)`, // Smaller offset for mobile
-                                zIndex: 10 - Math.abs(offset),
-                                opacity: 1 - Math.abs(offset) * 0.3,
-                              }}
+                              key={`${collection.id}-${i}`}
+                              className="absolute inset-0 transition-all duration-700 ease-in-out"
+                              style={getTransformStyle(offset, isMobile, collection.collection_type)}
                             >
-                              <Link href={`/product/${poster.id}`} className="block relative w-full h-full">
+                              <Link href={`/collection/${collection.id}`} className="block relative w-full h-full">
                                 <Image
                                   src={img}
-                                  alt={`${poster.title} - Image ${i + 1}`}
+                                  alt={`${collection.title} - Image ${i + 1}`}
                                   fill
-                                  className="object-cover rounded-xl shadow-md"
+                                  className="object-cover rounded-xl shadow-lg"
+                                  sizes={isMobile ? "140px" : "180px"}
                                 />
                               </Link>
                             </div>
                           )
                         })}
                       </div>
+
+                      <div className="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded-full z-20">
+                        {is5 ? "5-Pack" : "3-Pack"}
+                      </div>
                     </div>
                   </CardContent>
 
-                  <CardFooter className="flex flex-col p-2 pt-3 items-center space-y-1.5"> {/* Reduced padding and spacing */}
-                    <Link href={`/product/${poster.id}`} className="font-bold hover:underline text-center text-l"> 
-                      {poster.title}
+                  <CardFooter className="flex flex-col p-2 pt-3 items-center space-y-1.5">
+                    <Link
+                      href={`/collection/${collection.id}`}
+                      className="font-bold hover:underline text-center text-base line-clamp-2"
+                    >
+                      {collection.title}
                     </Link>
-                    <p className="text-l text-muted-foreground">₹{poster.price.toFixed(2)}</p> 
+                    <p className="text-lg font-semibold text-foreground">₹{collection.price.toFixed(2)}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {is5 ? "5 Items" : "3 Items"} Collection
+                    </p>
                     <Button
-                      className="flex flex-grow-1 mt-2 w-full font-bold text-xs h-8" // Made button smaller
-                      onClick={() => handleAddToCart(poster)}
+                      className="w-full font-bold text-xs h-8 mt-2"
+                      onClick={() => handleAddToCart(collection)}
                     >
                       Add to Cart
                     </Button>
@@ -197,34 +252,36 @@ export default function LatestDropsCarousel() {
         <Button
           variant="outline"
           size="icon"
-          className="absolute -left-4 top-1/2 h-8 w-8 -translate-y-1/2 rounded-full"
+          className="absolute -left-4 top-1/2 h-8 w-8 -translate-y-1/2 rounded-full z-10"
           onClick={handlePrev}
           disabled={currentIndex === 0}
         >
           <ChevronLeft className="h-4 w-4" />
-          <span className="sr-only">Previous</span>
         </Button>
         <Button
           variant="outline"
           size="icon"
-          className="absolute -right-4 top-1/2 h-8 w-8 -translate-y-1/2 rounded-full"
+          className="absolute -right-4 top-1/2 h-8 w-8 -translate-y-1/2 rounded-full z-10"
           onClick={handleNext}
           disabled={currentIndex >= maxIndex}
         >
           <ChevronRight className="h-4 w-4" />
-          <span className="sr-only">Next</span>
         </Button>
       </div>
 
-      <div className="mt-4 flex justify-center space-x-1 md:hidden">
-        {Array.from({ length: maxIndex + 1 }).map((_, index) => (
-          <button
-            key={index}
-            className={`h-1.5 rounded-full ${index === currentIndex ? "w-6 bg-primary" : "w-1.5 bg-muted"}`}
-            onClick={() => scrollToIndex(index)}
-          />
-        ))}
-      </div>
+      {maxIndex > 0 && (
+        <div className="mt-4 flex justify-center space-x-1 md:hidden">
+          {Array.from({ length: maxIndex + 1 }).map((_, index) => (
+            <button
+              key={index}
+              className={`h-1.5 rounded-full transition-all ${
+                index === currentIndex ? "w-6 bg-primary" : "w-1.5 bg-muted"
+              }`}
+              onClick={() => scrollToIndex(index)}
+            />
+          ))}
+        </div>
+      )}
     </div>
   )
 }

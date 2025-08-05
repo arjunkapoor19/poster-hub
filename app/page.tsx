@@ -6,6 +6,7 @@ import LatestDropsCarousel from "@/components/latest-drops-carousel"
 import PopularPosters from "@/components/popular-posters"
 import Footer from "@/components/footer"
 import Header from "@/components/header"
+import LatestDropsCarousel2 from "@/components/latest-drops-carousel2"
 
 export default function Home() {
   return (
@@ -84,7 +85,7 @@ export default function Home() {
               <ChevronRight className="ml-1 h-4 w-4" />
             </Link>
           </div>
-          <LatestDropsCarousel />
+          <LatestDropsCarousel2 />
         </div>
       </div>
 
