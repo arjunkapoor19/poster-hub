@@ -68,10 +68,32 @@ const config = {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
+        // Premium loader animations
+        shimmer: {
+          '0%': { transform: 'translateX(-100%)' },
+          '100%': { transform: 'translateX(100%)' },
+        },
+        fadeInScale: {
+          '0%': { opacity: '0', transform: 'scale(0.8)' },
+          '100%': { opacity: '1', transform: 'scale(1)' },
+        },
+        breathe: {
+          '0%, 100%': { transform: 'scale(1)', opacity: '0.7' },
+          '50%': { transform: 'scale(1.1)', opacity: '1' },
+        },
+        ripple: {
+          '0%': { transform: 'scale(0)', opacity: '1' },
+          '100%': { transform: 'scale(4)', opacity: '0' },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        // Premium loader animations
+        'shimmer': 'shimmer 2s infinite',
+        'fade-in-scale': 'fadeInScale 0.3s ease-out',
+        'breathe': 'breathe 2s ease-in-out infinite',
+        'ripple': 'ripple 0.6s linear',
       },
     },
   },
@@ -79,4 +101,3 @@ const config = {
 } satisfies Config
 
 export default config
-

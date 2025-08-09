@@ -1,70 +1,62 @@
-"use client";
+"use client"
 
-import { useState, useEffect } from "react";
-import Image from "next/image";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { useState, useEffect } from "react"
+import Image from "next/image"
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
+import { supabase } from "@/lib/supabase"
 
-// --- STEP 1: Import the Supabase client ---
-// This should be your Supabase client-side instance.
-import { supabase } from "@/lib/supabase"; // Adjust path if needed
-
-/**
- * This is now a single, self-contained client component.
- * It fetches its own data from Supabase and manages its own state.
- */
 export default function HeroBanner() {
-  // State to hold the array of poster image URLs
-  const [posters, setPosters] = useState<string[]>([]);
-  // State to manage the loading process
-  const [isLoading, setIsLoading] = useState(true);
-  // State for the current index of the carousel
-  const [currentPosterIndex, setCurrentPosterIndex] = useState(0);
+  const [posters, setPosters] = useState<string[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [currentPosterIndex, setCurrentPosterIndex] = useState(0)
 
-  // --- STEP 2: Fetch data inside a useEffect hook ---
   useEffect(() => {
     const fetchHeroPosters = async () => {
-      setIsLoading(true);
+      setIsLoading(true)
       try {
         const { data, error } = await supabase
           .from("products")
-          .select("image") // We only need the image URL
-          .eq("hero", true); // Where the 'hero' column is true
+          .select("image")
+          .eq("hero", true)
 
         if (error) {
-          console.error("Supabase Error: Could not fetch hero posters.", error.message);
-          setPosters([]); // Set to empty array on error
+          console.error("Supabase Error: Could not fetch hero posters.", error.message)
+          setPosters([])
         } else if (data) {
-          // Extract just the image URLs from the returned objects
-          const urls = data.map(product => product.image).filter(Boolean) as string[];
-          setPosters(urls);
+          const urls = data.map((product) => product.image).filter(Boolean) as string[]
+
+          // Fisher-Yates shuffle
+          for (let i = urls.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1))
+            ;[urls[i], urls[j]] = [urls[j], urls[i]]
+          }
+
+          setPosters(urls)
         }
       } catch (err) {
-        console.error("Unexpected error fetching posters:", err);
+        console.error("Unexpected error fetching posters:", err)
       } finally {
-        setIsLoading(false); // Stop loading once done
+        setIsLoading(false)
       }
-    };
+    }
 
-    fetchHeroPosters();
-  }, []); // The empty array [] means this effect runs once when the component mounts
+    fetchHeroPosters()
+  }, [])
 
-  // --- STEP 3: Handle the carousel rotation ---
   useEffect(() => {
-    if (posters.length <= 1) return; // Don't run the interval if not needed
+    if (posters.length <= 1) return
 
     const interval = setInterval(() => {
-      setCurrentPosterIndex((prevIndex) => (prevIndex + 1) % posters.length);
-    }, 3000);
+      setCurrentPosterIndex((prevIndex) => (prevIndex + 1) % posters.length)
+    }, 3000)
 
-    return () => clearInterval(interval); // Cleanup on component unmount
-  }, [posters.length]); // Re-run if the number of posters changes
+    return () => clearInterval(interval)
+  }, [posters.length])
 
-  // --- STEP 4: Render loading or empty states ---
   const renderCarouselContent = () => {
     if (isLoading) {
-      // You can replace this with a nice skeleton loader
-      return <div className="w-full h-full bg-gray-900/50 rounded-sm animate-pulse" />;
+      return <div className="w-full h-full bg-gray-900/50 rounded-sm animate-pulse" />
     }
 
     if (posters.length === 0) {
@@ -72,9 +64,9 @@ export default function HeroBanner() {
         <div className="w-full h-full bg-gray-900 rounded-sm flex items-center justify-center">
           <p className="text-gray-400">No images found</p>
         </div>
-      );
+      )
     }
-    
+
     return posters.map((poster, index) => (
       <div key={poster || index} className="absolute inset-0">
         <Image
@@ -85,12 +77,11 @@ export default function HeroBanner() {
             index === currentPosterIndex ? "opacity-100" : "opacity-0"
           }`}
           sizes="(max-width: 768px) 260px, (max-width: 1024px) 285px, 305px"
-          priority={index === 0} // Prioritize the first image for fast LCP
+          priority={index === 0}
         />
       </div>
-    ));
-  };
-
+    ))
+  }
 
   return (
     <div className="relative w-full h-[100svh] md:h-[90vh] overflow-hidden">
@@ -99,7 +90,6 @@ export default function HeroBanner() {
         <div className="relative mt-[-16vh]">
           <div className="relative w-[260px] h-[370px] md:w-[285px] md:h-[400px] lg:w-[305px] lg:h-[432px]">
             {renderCarouselContent()}
-            {/* Render the gradient overlay only if there are posters */}
             {posters.length > 0 && (
               <div
                 className="absolute inset-0 rounded-sm bg-gradient-to-br from-transparent via-transparent to-black/20"
@@ -149,5 +139,5 @@ export default function HeroBanner() {
         </div>
       </div>
     </div>
-  );
+  )
 }

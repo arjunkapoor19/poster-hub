@@ -15,7 +15,7 @@ export default function Home() {
       
       <HeroBanner />
 
-      {/* Stats Section - Add social proof */}
+      {/* Stats Section */}
       <div className="bg-muted/30 py-4">
         <div className="container px-4">
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-center ">
@@ -60,7 +60,7 @@ export default function Home() {
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-2">
               <Award className="h-6 w-6 text-primary" />
-              <h2 className="text-2xl font-bold tracking-tight">Popular Right Now</h2>
+              <h2 className="text-2xl font-bold tracking-tight">Our Collections</h2>
               <span className="bg-orange-100 text-orange-600 text-xs px-2 py-1 rounded-full">Hot</span>
             </div>
             <Link
@@ -72,20 +72,6 @@ export default function Home() {
             </Link>
           </div>
           <PopularPosters />
-        </div>
-      </div>
-
-      {/* Featured Collections Section */}
-      <div className="bg-muted/30 py-8 md:py-12">
-        <div className="container px-4">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold tracking-tight">Featured Collections</h2>
-            <Link href="/collections" className="flex items-center text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
-              View all
-              <ChevronRight className="ml-1 h-4 w-4" />
-            </Link>
-          </div>
-          <LatestDropsCarousel2 />
         </div>
       </div>
 

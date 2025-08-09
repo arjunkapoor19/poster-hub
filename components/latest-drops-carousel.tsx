@@ -14,6 +14,7 @@ import { supabase } from "../lib/supabase"
 import { useCartStore } from "@/store/cartStore"
 import { AddToCartModal } from "./ui/add-to-cart-modal"
 import { useCartDrawerStore } from "@/store/cartDrawerStore"
+import { PremiumLoader } from "./ui/loader"
 
 type Collection = {
   id: string | number
@@ -147,10 +148,9 @@ export default function LatestDropsCarousel() {
   if (data.length === 0) {
     return (
       <div className="flex flex-col justify-center items-center h-64 space-y-4">
-        <p className="text-muted-foreground">No collections found</p>
-        <p className="text-sm text-muted-foreground">
-          Add some packs to your database with <code>latest = true</code> to see them here
-        </p>
+        <div className="text-sm text-muted-foreground">
+            op
+        </div>
       </div>
     )
   }
