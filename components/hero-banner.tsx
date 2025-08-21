@@ -88,7 +88,7 @@ export default function HeroBanner() {
       {/* Poster Carousel Area */}
       <div className="absolute inset-0 flex items-center justify-center z-10">
         <div className="relative mt-[-16vh]">
-          <div className="relative w-[260px] h-[370px] md:w-[285px] md:h-[400px] lg:w-[305px] lg:h-[432px]">
+          <div className="relative w-[300px] h-[410px] md:w-[285px] md:h-[400px] lg:w-[350px] lg:h-[479px]">
             {renderCarouselContent()}
             {posters.length > 0 && (
               <div

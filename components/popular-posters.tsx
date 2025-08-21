@@ -10,7 +10,8 @@ type Collection = {
   name: string
   image: string | null
   description?: string
-  itemCount?: number
+  itemCount?: number,
+  category?: string,
 }
 
 export default function Collections() {
@@ -31,7 +32,8 @@ export default function Collections() {
             name,
             description,
             image,
-            is_active
+            is_active,
+            category
           `)
           .eq("is_active", true)
           .order("display_order", { ascending: true })
@@ -123,7 +125,7 @@ export default function Collections() {
                 </h3>
                 
                 {/* CTA Button */}
-                <Link href={`/collection/${collection.id}`}>
+                <Link href={`/collections/${collection.category}`}>
                   <button className="w-full bg-gray-900 text-white py-4 rounded-2xl font-semibold text-lg hover:shadow-lg transform hover:scale-105 transition-all duration-300">
                     View Collection
                   </button>
@@ -136,7 +138,7 @@ export default function Collections() {
 
       {/* Bottom CTA */}
       <div className="text-center mt-16">
-        <Link href="/collections">
+        <Link href="/collections/">
           <button className="inline-flex items-center gap-3 bg-black text-white px-8 py-4 rounded-2xl font-semibold text-lg hover:shadow-2xl transform hover:scale-105 transition-all duration-300">
             <span>Explore All Collections</span>
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
