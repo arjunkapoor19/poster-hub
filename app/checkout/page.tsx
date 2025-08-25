@@ -10,15 +10,34 @@ import { Card } from "@/components/ui/card"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogFooter 
+} from "@/components/ui/dialog"
 import Header from "@/components/header"
 import Footer from "@/components/footer"
 import { useCartStore } from "@/store/cartStore"
 import { supabase } from "@/lib/supabaseClient"
 import Script from "next/script"
 import { v4 as uuidv4 } from 'uuid'
-import { Shield, Lock, Clock, Truck, Check, Star, Users, ArrowRight } from 'lucide-react'
+import { Shield, Lock, Clock, Truck, Check, Star, Users, ArrowRight, AlertCircle, LogIn, ShoppingCart } from 'lucide-react'
 
 declare const Razorpay: any;
+
+interface ModalState {
+  isOpen: boolean;
+  type: 'validation' | 'auth_required' | 'empty_cart' | 'order_error' | 'payment_error' | 'payment_cancelled';
+  title: string;
+  message: string;
+  primaryAction?: () => void;
+  primaryActionText?: string;
+  secondaryAction?: () => void;
+  secondaryActionText?: string;
+}
 
 export default function CheckoutPage() {
   const router = useRouter()
@@ -26,6 +45,14 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(false)
   const { cart, clearCart } = useCartStore()
   
+  // Modal state
+  const [modal, setModal] = useState<ModalState>({
+    isOpen: false,
+    type: 'validation',
+    title: '',
+    message: ''
+  });
+
   // Form states
   const [firstName, setFirstName] = useState("")
   const [lastName, setLastName] = useState("")
@@ -40,6 +67,21 @@ export default function CheckoutPage() {
   // Social proof and stock states
   const [recentOrders, setRecentOrders] = useState(247)
   const [stockStatus, setStockStatus] = useState<{[key: string]: number}>({})
+
+  // Helper function to show modals
+  const showModal = (modalData: Partial<ModalState>) => {
+    setModal({
+      isOpen: true,
+      type: 'validation',
+      title: '',
+      message: '',
+      ...modalData
+    });
+  };
+
+  const closeModal = () => {
+    setModal(prev => ({ ...prev, isOpen: false }));
+  };
 
   // Load saved form data from localStorage
   useEffect(() => {
@@ -147,25 +189,42 @@ export default function CheckoutPage() {
   };
 
   const handlePayment = async () => {
-    // Validation with better UX
+    // Validation with modal instead of alert
     const requiredFields = [
-      { value: firstName, name: "First Name" },
-      { value: lastName, name: "Last Name" },
-      { value: address, name: "Address" },
-      { value: city, name: "City" },
-      { value: state, name: "State" },
-      { value: pinCode, name: "PIN Code" },
-      { value: phone, name: "Phone Number" }
+      { value: firstName, name: "First Name", field: "firstName" },
+      { value: lastName, name: "Last Name", field: "lastName" },
+      { value: address, name: "Address", field: "address" },
+      { value: city, name: "City", field: "city" },
+      { value: state, name: "State", field: "state" },
+      { value: pinCode, name: "PIN Code", field: "pinCode" },
+      { value: phone, name: "Phone Number", field: "phone" }
     ];
 
     const missingField = requiredFields.find(field => !field.value);
     if (missingField) {
-      alert(`Please enter your ${missingField.name} to continue.`);
+      showModal({
+        type: 'validation',
+        title: 'Missing Information',
+        message: `Please enter your ${missingField.name} to continue with your order.`,
+        primaryActionText: 'Got it',
+        primaryAction: closeModal
+      });
       return;
     }
 
     if (cart.length === 0) {
-      alert("Your cart is empty.");
+      showModal({
+        type: 'empty_cart',
+        title: 'Cart is Empty',
+        message: 'Your cart is empty. Please add some items before proceeding to checkout.',
+        primaryActionText: 'Browse Products',
+        primaryAction: () => {
+          closeModal();
+          router.push('/products');
+        },
+        secondaryActionText: 'Close',
+        secondaryAction: closeModal
+      });
       return;
     }
 
@@ -174,9 +233,18 @@ export default function CheckoutPage() {
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
-        alert("You must be logged in to place an order.")
-        setLoading(false)
-        return
+        setLoading(false);
+        showModal({
+          type: 'auth_required',
+          title: 'Sign In Required',
+          message: 'Please sign in to your account to complete your order. Your cart items will be saved.',
+          primaryActionText: 'Sign In',
+          primaryAction: () => {
+            closeModal();
+            router.push('/login?redirect=/checkout');
+          }
+        });
+        return;
       }
 
       const merchantTransactionId = uuidv4();
@@ -198,8 +266,22 @@ export default function CheckoutPage() {
         });
 
       if (orderError) {
-        alert(`Could not create your order: ${orderError.message}.`);
         setLoading(false);
+        showModal({
+          type: 'order_error',
+          title: 'Order Creation Failed',
+          message: `We couldn't create your order at this time. ${orderError.message}. Please try again or contact support if the problem persists.`,
+          primaryActionText: 'Try Again',
+          primaryAction: () => {
+            closeModal();
+            handlePayment();
+          },
+          secondaryActionText: 'Contact Support',
+          secondaryAction: () => {
+            closeModal();
+            router.push('/contact');
+          }
+        });
         return;
       }
       
@@ -215,8 +297,22 @@ export default function CheckoutPage() {
       const razorpayData = await response.json();
 
       if (!razorpayData.success) {
-        alert(`Payment initiation failed: ${razorpayData.message}`);
         setLoading(false);
+        showModal({
+          type: 'payment_error',
+          title: 'Payment Setup Failed',
+          message: `We couldn't initiate the payment process. ${razorpayData.message}. Please try again or contact support.`,
+          primaryActionText: 'Try Again',
+          primaryAction: () => {
+            closeModal();
+            handlePayment();
+          },
+          secondaryActionText: 'Contact Support',
+          secondaryAction: () => {
+            closeModal();
+            router.push('/contact');
+          }
+        });
         return;
       }
       
@@ -249,8 +345,22 @@ export default function CheckoutPage() {
         modal: {
             ondismiss: function() {
                 console.log("Checkout form closed by user.");
-                alert("Payment was not completed.");
                 setLoading(false);
+                showModal({
+                  type: 'payment_cancelled',
+                  title: 'Payment Cancelled',
+                  message: 'Your payment was cancelled. Your order is still saved and you can complete the payment anytime.',
+                  primaryActionText: 'Try Again',
+                  primaryAction: () => {
+                    closeModal();
+                    handlePayment();
+                  },
+                  secondaryActionText: 'Continue Shopping',
+                  secondaryAction: () => {
+                    closeModal();
+                    router.push('/products');
+                  }
+                });
             }
         }
       };
@@ -260,10 +370,43 @@ export default function CheckoutPage() {
 
     } catch (error: any) {
       console.error("An unexpected error occurred:", error);
-      alert(`An unexpected error occurred: ${error?.message || 'Unknown error'}.`);
       setLoading(false);
+      showModal({
+        type: 'payment_error',
+        title: 'Unexpected Error',
+        message: `An unexpected error occurred: ${error?.message || 'Unknown error'}. Please try again or contact our support team.`,
+        primaryActionText: 'Try Again',
+        primaryAction: () => {
+          closeModal();
+          handlePayment();
+        },
+        secondaryActionText: 'Contact Support',
+        secondaryAction: () => {
+          closeModal();
+          router.push('/contact');
+        }
+      });
     }
   }
+
+  // Get appropriate icon for modal type
+  const getModalIcon = () => {
+    switch (modal.type) {
+      case 'auth_required':
+        return <LogIn className="h-6 w-6 text-blue-600" />;
+      case 'empty_cart':
+        return <ShoppingCart className="h-6 w-6 text-orange-600" />;
+      case 'validation':
+        return <AlertCircle className="h-6 w-6 text-amber-600" />;
+      case 'order_error':
+      case 'payment_error':
+        return <AlertCircle className="h-6 w-6 text-red-600" />;
+      case 'payment_cancelled':
+        return <AlertCircle className="h-6 w-6 text-gray-600" />;
+      default:
+        return <AlertCircle className="h-6 w-6 text-blue-600" />;
+    }
+  };
 
   return (
     <>
@@ -271,6 +414,42 @@ export default function CheckoutPage() {
         id="razorpay-checkout-js"
         src="https://checkout.razorpay.com/v1/checkout.js"
       />
+
+      {/* Modal Component */}
+      <Dialog open={modal.isOpen} onOpenChange={closeModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <div className="flex items-center space-x-3 mb-2">
+              {getModalIcon()}
+              <DialogTitle className="text-lg font-semibold">
+                {modal.title}
+              </DialogTitle>
+            </div>
+            <DialogDescription className="text-gray-600">
+              {modal.message}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            {modal.secondaryAction && modal.secondaryActionText && (
+              <Button 
+                variant="outline" 
+                onClick={modal.secondaryAction}
+                className="w-full sm:w-auto"
+              >
+                {modal.secondaryActionText}
+              </Button>
+            )}
+            {modal.primaryAction && modal.primaryActionText && (
+              <Button 
+                onClick={modal.primaryAction}
+                className="w-full sm:w-auto"
+              >
+                {modal.primaryActionText}
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white">
         <Header />

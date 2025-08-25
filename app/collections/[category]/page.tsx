@@ -132,7 +132,7 @@ export default function CategoryProductsPage() {
     const interval = setInterval(() => {
       setCarousel3Rotation((prev) => (prev + 1) % 3)
       setCarousel5Rotation((prev) => (prev + 1) % 5)
-    }, 3000)
+    }, 2000)
     return () => clearInterval(interval)
   }, [viewMode, filteredProducts.length])
 
@@ -334,9 +334,7 @@ export default function CategoryProductsPage() {
         </div>
       </div>
 
-      {/* Products Display */}
-      {viewMode === "carousel" ? (
-        /* 3D Carousel View */
+
         <div className="relative">
           <div
             className="overflow-hidden"
@@ -475,62 +473,6 @@ export default function CategoryProductsPage() {
             </div>
           )}
         </div>
-      ) : (
-        /* Grid View */
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-          {filteredProducts.map((product) => {
-            const firstImage = getAvailableImages(product)[0]
-            const is5 = product.collection_type === 5
-
-            return (
-              <Card key={product.id} className="group overflow-hidden border-0 bg-white shadow-sm hover:shadow-xl transition-all duration-300">
-                <CardContent className="p-0">
-                  <div className="relative aspect-square overflow-hidden bg-zinc-50">
-                    <Link href={getProductUrl(product)}>
-                      <Image
-                        src={firstImage}
-                        alt={product.title}
-                        fill
-                        className="object-cover group-hover:scale-105 transition-transform duration-500"
-                        sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 20vw"
-                      />
-                    </Link>
-                    <div className="absolute top-3 right-3 flex flex-col gap-1.5">
-                      <Badge variant="secondary" className="text-xs font-medium bg-white/90 backdrop-blur-sm">
-                        {is5 ? "5-Pack" : "3-Pack"}
-                      </Badge>
-                    </div>
-                  </div>
-                </CardContent>
-                
-                <div className="p-4 space-y-3">
-                  <Link
-                    href={getProductUrl(product)}
-                    className="block font-medium text-zinc-900 hover:text-blue-600 transition-colors line-clamp-2 leading-tight text-sm"
-                  >
-                    {product.title}
-                  </Link>
-                  
-                  {renderStars(product.rating)}
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="font-bold text-lg text-zinc-900">₹{product.price.toFixed(2)}</div>
-                  </div>
-                  
-                  <Button
-                    size="sm"
-                    className="w-full bg-zinc-900 hover:bg-zinc-800 text-white font-medium h-9 gap-2"
-                    onClick={() => handleAddToCart(product)}
-                  >
-                    <ShoppingCart className="w-3.5 h-3.5" />
-                    Add to Cart
-                  </Button>
-                </div>
-              </Card>
-            )
-          })}
-        </div>
-      )}
     </div>
   )
 }
