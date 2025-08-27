@@ -220,7 +220,7 @@ export default function CheckoutPage() {
         primaryActionText: 'Browse Products',
         primaryAction: () => {
           closeModal();
-          router.push('/products');
+          router.push('/shop');
         },
         secondaryActionText: 'Close',
         secondaryAction: closeModal
@@ -228,34 +228,36 @@ export default function CheckoutPage() {
       return;
     }
 
-    setLoading(true);
+  setLoading(true);
 
-    try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        setLoading(false);
-        showModal({
-          type: 'auth_required',
-          title: 'Sign In Required',
-          message: 'Please sign in to your account to complete your order. Your cart items will be saved.',
-          primaryActionText: 'Sign In',
-          primaryAction: () => {
-            closeModal();
-            router.push('/login?redirect=/checkout');
-          }
-        });
-        return;
-      }
+  try {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      setLoading(false);
+      showModal({
+        type: 'auth_required',
+        title: 'Sign In Required',
+        message: 'Please sign in to your account to complete your order. Your cart items will be saved.',
+        primaryActionText: 'Sign In',
+        primaryAction: () => {
+          closeModal();
+          router.push('/login?redirect=/checkout');
+        }
+      });
+      return;
+    }
 
-      const merchantTransactionId = uuidv4();
-      const shippingAddress = { firstName, lastName, address, city, state, pinCode, phone };
-      
+    const merchantTransactionId = uuidv4();
+    const shippingAddress = { firstName, lastName, address, city, state, pinCode, phone };
+    
+    // Handle COD orders - create order immediately with correct status
+    if (shippingMethod === "cod") {
       const { error: orderError } = await supabase
         .from("orders")
         .insert({
           user_id: user.id,
           items: cart.map(item => ({ product_id: item.id, quantity: item.quantity, name: item.name, price: item.price })),
-          status: "Pending Payment",
+          status: "COD Order Placed",
           shipping_address: shippingAddress,
           shipping_method: shippingMethod,
           shipping_cost: shippingCost,
@@ -270,111 +272,42 @@ export default function CheckoutPage() {
         showModal({
           type: 'order_error',
           title: 'Order Creation Failed',
-          message: `We couldn't create your order at this time. ${orderError.message}. Please try again or contact support if the problem persists.`,
+          message: `We couldn't create your COD order. ${orderError.message}. Please try again.`,
           primaryActionText: 'Try Again',
           primaryAction: () => {
             closeModal();
             handlePayment();
-          },
-          secondaryActionText: 'Contact Support',
-          secondaryAction: () => {
-            closeModal();
-            router.push('/contact');
           }
         });
         return;
       }
-      
-      const response = await fetch('/api/razorpay/create-order', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-            amount: orderTotal * 100,
-            merchant_transaction_id: merchantTransactionId 
-        }),
-      });
-      
-      const razorpayData = await response.json();
 
-      if (!razorpayData.success) {
-        setLoading(false);
-        showModal({
-          type: 'payment_error',
-          title: 'Payment Setup Failed',
-          message: `We couldn't initiate the payment process. ${razorpayData.message}. Please try again or contact support.`,
-          primaryActionText: 'Try Again',
-          primaryAction: () => {
-            closeModal();
-            handlePayment();
-          },
-          secondaryActionText: 'Contact Support',
-          secondaryAction: () => {
-            closeModal();
-            router.push('/contact');
-          }
-        });
-        return;
-      }
-      
-      const { order: razorpayOrder } = razorpayData;
+      // COD order created successfully
+      clearSavedFormData();
+      clearCart();
+      router.push(`/order-success?order_id=${merchantTransactionId}&payment_method=cod`);
+      setLoading(false);
+      return;
+    }
+    
+    // For prepaid orders, create Razorpay order first
+    const response = await fetch('/api/razorpay/create-order', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+          amount: orderTotal * 100,
+          merchant_transaction_id: merchantTransactionId 
+      }),
+    });
+    
+    const razorpayData = await response.json();
 
-      const options = {
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
-        amount: razorpayOrder.amount,
-        currency: razorpayOrder.currency,
-        name: "Your Awesome Store",
-        description: `Order ID: ${merchantTransactionId}`,
-        order_id: razorpayOrder.id,
-        handler: function (response: any) {
-            clearSavedFormData(); // Clear saved data on successful payment
-            clearCart();
-            router.push(`/order-success?payment_id=${response.razorpay_payment_id}&order_id=${merchantTransactionId}`);
-        },
-        prefill: {
-            name: `${firstName} ${lastName}`,
-            email: email,
-            contact: phone,
-        },
-        notes: {
-            merchant_transaction_id: merchantTransactionId,
-            shippingAddress: JSON.stringify(shippingAddress)
-        },
-        theme: {
-            color: "#2563eb",
-        },
-        modal: {
-            ondismiss: function() {
-                console.log("Checkout form closed by user.");
-                setLoading(false);
-                showModal({
-                  type: 'payment_cancelled',
-                  title: 'Payment Cancelled',
-                  message: 'Your payment was cancelled. Your order is still saved and you can complete the payment anytime.',
-                  primaryActionText: 'Try Again',
-                  primaryAction: () => {
-                    closeModal();
-                    handlePayment();
-                  },
-                  secondaryActionText: 'Continue Shopping',
-                  secondaryAction: () => {
-                    closeModal();
-                    router.push('/products');
-                  }
-                });
-            }
-        }
-      };
-
-      const rzpInstance = new Razorpay(options);
-      rzpInstance.open();
-
-    } catch (error: any) {
-      console.error("An unexpected error occurred:", error);
+    if (!razorpayData.success) {
       setLoading(false);
       showModal({
         type: 'payment_error',
-        title: 'Unexpected Error',
-        message: `An unexpected error occurred: ${error?.message || 'Unknown error'}. Please try again or contact our support team.`,
+        title: 'Payment Setup Failed',
+        message: `We couldn't initiate the payment process. ${razorpayData.message}. Please try again or contact support.`,
         primaryActionText: 'Try Again',
         primaryAction: () => {
           closeModal();
@@ -386,7 +319,196 @@ export default function CheckoutPage() {
           router.push('/contact');
         }
       });
+      return;
     }
+    
+    const { order: razorpayOrder } = razorpayData;
+
+    // Helper function to create order in database with retry mechanism
+    const createOrderInDatabase = async (paymentDetails: any, retryCount = 0): Promise<boolean> => {
+      const maxRetries = 3;
+      
+      try {
+        console.log(`Attempting to create order (attempt ${retryCount + 1}/${maxRetries + 1})`);
+        
+        const { data: orderData, error: orderError } = await supabase
+          .from("orders")
+          .insert({
+            user_id: user.id,
+            items: cart.map(item => ({ 
+              product_id: item.id, 
+              quantity: item.quantity, 
+              name: item.name, 
+              price: item.price 
+            })),
+            status: "Payment Confirmed",
+            shipping_address: shippingAddress,
+            shipping_method: shippingMethod,
+            shipping_cost: shippingCost,
+            subtotal: cartTotal,
+            total_amount: orderTotal,
+            merchant_transaction_id: merchantTransactionId,
+            payment_id: paymentDetails.razorpay_payment_id,
+            razorpay_order_id: paymentDetails.razorpay_order_id,
+            payment_confirmed_at: new Date().toISOString(),
+            created_at: new Date().toISOString()
+          })
+          .select()
+          .single();
+
+        if (orderError) {
+          console.error(`Order creation failed (attempt ${retryCount + 1}):`, orderError);
+          
+          if (retryCount < maxRetries) {
+            // Wait before retrying (exponential backoff)
+            await new Promise(resolve => setTimeout(resolve, Math.pow(2, retryCount) * 1000));
+            return createOrderInDatabase(paymentDetails, retryCount + 1);
+          }
+          
+          throw orderError;
+        }
+
+        console.log("Order created successfully:", orderData);
+        return true;
+        
+      } catch (error) {
+        console.error(`Order creation error (attempt ${retryCount + 1}):`, error);
+        
+        if (retryCount < maxRetries) {
+          // Wait before retrying
+          await new Promise(resolve => setTimeout(resolve, Math.pow(2, retryCount) * 1000));
+          return createOrderInDatabase(paymentDetails, retryCount + 1);
+        }
+        
+        throw error;
+      }
+    };
+
+    const options = {
+      key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+      amount: razorpayOrder.amount,
+      currency: razorpayOrder.currency,
+      name: "WallStreet",
+      description: `Order ID: ${merchantTransactionId}`,
+      order_id: razorpayOrder.id,
+      handler: async function (response: any) {
+        console.log("Payment successful:", response);
+        
+        // Show a loading state to user
+        setLoading(true);
+        
+        try {
+          // Create order in database with retry mechanism
+          const orderCreated = await createOrderInDatabase(response);
+          
+          if (orderCreated) {
+            // Success - clear data and redirect
+            clearSavedFormData();
+            clearCart();
+            
+            router.push(`/order-success?payment_id=${response.razorpay_payment_id}&order_id=${merchantTransactionId}&razorpay_order_id=${response.razorpay_order_id}`);
+          }
+          
+        } catch (error: any) {
+          console.error("Final order creation error:", error);
+          
+          // Show user-friendly error modal instead of alert
+          setLoading(false);
+          showModal({
+            type: 'order_error',
+            title: 'Order Processing Issue',
+            message: `Your payment was successful but we encountered an issue creating your order. Please don't worry - no additional charges will be made. Our team will contact you shortly to resolve this.`,
+            primaryActionText: 'Contact Support',
+            primaryAction: () => {
+              closeModal();
+              // You can redirect to support page with payment details
+              router.push(`/contact?payment_id=${response.razorpay_payment_id}&issue=order_creation_failed`);
+            },
+            secondaryActionText: 'Try Creating Order Again',
+            secondaryAction: async () => {
+              closeModal();
+              setLoading(true);
+              try {
+                await createOrderInDatabase(response);
+                // If successful this time
+                clearSavedFormData();
+                clearCart();
+                router.push(`/order-success?payment_id=${response.razorpay_payment_id}&order_id=${merchantTransactionId}&razorpay_order_id=${response.razorpay_order_id}`);
+              } catch (retryError) {
+                setLoading(false);
+                showModal({
+                  type: 'order_error',
+                  title: 'Still Having Issues',
+                  message: `We're still unable to create your order. Payment ID: ${response.razorpay_payment_id}. Please contact our support team immediately.`,
+                  primaryActionText: 'Contact Support Now',
+                  primaryAction: () => {
+                    closeModal();
+                    router.push(`/contact?payment_id=${response.razorpay_payment_id}&issue=persistent_order_creation_failed`);
+                  }
+                });
+              }
+            }
+          });
+        }
+      },
+      prefill: {
+          name: `${firstName} ${lastName}`,
+          email: email,
+          contact: phone,
+      },
+      notes: {
+          merchant_transaction_id: merchantTransactionId,
+          shippingAddress: JSON.stringify(shippingAddress)
+      },
+      theme: {
+          color: "#2563eb",
+      },
+      modal: {
+          ondismiss: function() {
+              console.log("Checkout form closed by user.");
+              setLoading(false);
+              showModal({
+                type: 'payment_cancelled',
+                title: 'Payment Cancelled',
+                message: 'Your payment was cancelled. No charges were made to your account.',
+                primaryActionText: 'Try Again',
+                primaryAction: () => {
+                  closeModal();
+                  handlePayment();
+                },
+                secondaryActionText: 'Continue Shopping',
+                secondaryAction: () => {
+                  closeModal();
+                  router.push('/shop');
+                }
+              });
+          }
+      }
+    };
+
+    const rzpInstance = new Razorpay(options);
+    rzpInstance.open();
+    setLoading(false); // Reset loading state after opening payment modal
+
+  } catch (error: any) {
+    console.error("An unexpected error occurred:", error);
+    setLoading(false);
+    showModal({
+      type: 'payment_error',
+      title: 'Unexpected Error',
+      message: `An unexpected error occurred: ${error?.message || 'Unknown error'}. Please try again or contact our support team.`,
+      primaryActionText: 'Try Again',
+      primaryAction: () => {
+        closeModal();
+        handlePayment();
+      },
+      secondaryActionText: 'Contact Support',
+      secondaryAction: () => {
+        closeModal();
+        router.push('/contact');
+      }
+    });
+  }
   }
 
   // Get appropriate icon for modal type
@@ -617,10 +739,15 @@ export default function CheckoutPage() {
                   <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
                     <div className="flex items-center space-x-3 mb-2">
                       <Lock className="h-5 w-5 text-blue-600" />
-                      <span className="font-medium text-blue-800">Secure Payment via Razorpay</span>
+                      <span className="font-medium text-blue-800">
+                        {shippingMethod === "cod" ? "Cash on Delivery" : "Secure Payment via Razorpay"}
+                      </span>
                     </div>
                     <p className="text-sm text-blue-600">
-                      UPI • Credit/Debit Cards • Net Banking • Wallets
+                      {shippingMethod === "cod" 
+                        ? "Pay when your order is delivered to your doorstep" 
+                        : "UPI • Credit/Debit Cards • Net Banking • Wallets"
+                      }
                     </p>
                   </div>
                 </Card>
@@ -698,6 +825,7 @@ export default function CheckoutPage() {
                     ) : (
                       <Button 
                         className="w-full bg-gradient-to-r from-gray-700 to-gray-800 hover:from-gray-800 hover:to-gray-900 text-white py-4 text-lg font-bold shadow-lg transform hover:scale-105 transition-all duration-200"
+                        onClick={handlePayment}
                         disabled={loading}
                       >
                         {loading ? (

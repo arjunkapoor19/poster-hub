@@ -46,10 +46,10 @@ export default function Home() {
             <h2 className="text-2xl font-bold tracking-tight">Latest Drops</h2>
             <span className="bg-primary/10 text-primary text-xs px-2 py-1 rounded-full">New</span>
           </div>
-          <Link href="/new" className="flex items-center text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+          {/* <Link href="/new" className="flex items-center text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
             View all
             <ChevronRight className="ml-1 h-4 w-4" />
-          </Link>
+          </Link> */}
         </div>
         <LatestDropsCarousel />
       </div>
@@ -63,13 +63,13 @@ export default function Home() {
               <h2 className="text-2xl font-bold tracking-tight">Our Collections</h2>
               <span className="bg-orange-100 text-orange-600 text-xs px-2 py-1 rounded-full">Hot</span>
             </div>
-            <Link
+            {/* <Link
               href="/popular"
               className="flex items-center text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
             >
               View all
               <ChevronRight className="ml-1 h-4 w-4" />
-            </Link>
+            </Link> */}
           </div>
           <PopularPosters />
         </div>
