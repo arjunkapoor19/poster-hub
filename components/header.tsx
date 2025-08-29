@@ -12,6 +12,7 @@ import { useCartDrawerStore } from "@/store/cartDrawerStore"
 import CartDrawer from "@/components/cart-drawer"
 import { supabase } from "@/lib/supabaseClient"
 import { User as SupabaseUser } from "@supabase/supabase-js" 
+import Image from "next/image" // Import Next.js Image component
 
 const Header = () => {
   const router = useRouter()
@@ -159,9 +160,17 @@ const Header = () => {
           <MobileMenu />
           <Link
             href="/"
-            className="md:mr-4 absolute left-1/2 transform -translate-x-1/2 md:static md:transform-none md:left-0 flex items-center space-x-2"
+            className="md:mr-4 absolute ml-5 md:static md:transform-none md:left-0 flex items-center space-x-2"
           >
-            <span className="text-2xl md:text-3xl font-bold md:ml-7 shimmer-text">WallStreet</span>
+            {/* Replace the span with the Image component */}
+            <Image
+              src="/logo.png" // Path to your logo in the public folder
+              alt="WallStreet Logo"
+              width={150} // Adjust width as needed
+              height={40} // Adjust height as needed, maintain aspect ratio
+              priority // Prioritize loading of this image
+              className="md:ml-7" // Apply margin for spacing
+            />
           </Link>
           <div className="hidden flex-1 md:flex">
             <nav className="flex items-center space-x-6 text-m font-medium ml-10">

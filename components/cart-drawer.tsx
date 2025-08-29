@@ -6,7 +6,7 @@ import Image from "next/image"
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Button } from "@/components/ui/button"
-import { Minus, Plus, Trash2 } from "lucide-react"
+import { Minus, Plus, Trash2, ShoppingCart } from "lucide-react"
 import { AnimatePresence, motion } from "framer-motion"
 
 import { useCartStore } from "@/store/cartStore"
@@ -30,17 +30,45 @@ export default function CartDrawer() {
         {/* CART CONTENT SECTION */}
         <div className="flex-1 overflow-y-auto">
           {cart.length === 0 ? (
-            <div className="flex h-full flex-col items-center justify-center space-y-4">
-              <div className="relative h-48 w-48 text-muted-foreground">
-                <Image
-                  src="/empty-cart.svg"
-                  fill
-                  alt="Empty shopping cart"
+            <div className="flex h-full flex-col items-center justify-center space-y-6 px-8">
+              <motion.div
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.5, ease: "easeOut" }}
+                className="relative"
+              >
+                {/* Outer circle with subtle animation */}
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                  className="absolute inset-0 h-32 w-32 rounded-full border border-dashed border-muted-foreground/30"
                 />
+                
+                {/* Inner circle background */}
+                <div className="flex h-32 w-32 items-center justify-center rounded-full bg-muted/20">
+                  <ShoppingCart className="h-12 w-12 text-muted-foreground/60" strokeWidth={1.5} />
+                </div>
+              </motion.div>
+
+              <div className="text-center space-y-2">
+                <h3 className="text-xl font-semibold text-foreground">Your cart is empty</h3>
+                <p className="text-sm text-muted-foreground max-w-xs">
+                  Discover amazing products and add them to your cart to get started.
+                </p>
               </div>
-              <h3 className="text-xl font-semibold">Your cart is empty</h3>
-              <p className="text-muted-foreground">Looks like you haven't added anything yet.</p>
-              <Button onClick={closeDrawer}>Continue Shopping</Button>
+
+              <motion.div
+                initial={{ y: 10, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.3, duration: 0.4 }}
+              >
+                <Button 
+                  onClick={closeDrawer}
+                  className="bg-black text-white hover:bg-black/90 px-8 py-2.5 rounded-full font-medium"
+                >
+                  Start Shopping
+                </Button>
+              </motion.div>
             </div>
           ) : (
             <ScrollArea className="h-full">
