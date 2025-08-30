@@ -361,7 +361,7 @@ export default function OrderSuccessPage() {
                 Continue Shopping
               </Button>
             </Link>
-            <Link href="/account/profile">
+            <Link href="/profile">
               <Button className="w-full sm:w-auto bg-black hover:bg-gray-800 text-white">
                 Track Order
               </Button>
