@@ -25,6 +25,7 @@ import { supabase } from "@/lib/supabaseClient"
 import Script from "next/script"
 import { v4 as uuidv4 } from 'uuid'
 import { Shield, Lock, Clock, Truck, Check, Star, Users, ArrowRight, AlertCircle, LogIn, ShoppingCart } from 'lucide-react'
+import Link from "next/link"
 
 declare const Razorpay: any;
 
@@ -65,7 +66,7 @@ export default function CheckoutPage() {
   const [shippingMethod, setShippingMethod] = useState("prepaid")
 
   // Social proof and stock states
-  const [recentOrders, setRecentOrders] = useState(247)
+  const [recentOrders, setRecentOrders] = useState(32)
   const [stockStatus, setStockStatus] = useState<{[key: string]: number}>({})
 
   // Helper function to show modals
@@ -619,8 +620,7 @@ export default function CheckoutPage() {
                     <Check className="h-6 w-6 text-green-500" />
                   </div>
                   <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-                    <p className="text-green-800 font-medium">{email || "Loading..."}</p>
-                    <p className="text-sm text-green-600 mt-1">✓ Verified account</p>
+                    <p className="text-green-800 font-medium">{email || <Link href={"/login"}>Please <u>log in</u></Link>}</p>
                   </div>
                 </Card>
 
@@ -715,17 +715,6 @@ export default function CheckoutPage() {
                           </div>
                           <p className="text-sm text-green-600 mt-1">
                             ⚡ 3-5 business days • Free for prepaid orders
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-3 p-4 border-2 border-gray-200 rounded-lg">
-                        <RadioGroupItem value="cod" id="cod" />
-                        <div className="flex-1">
-                          <label htmlFor="cod" className="font-medium text-gray-700">
-                            Cash on Delivery
-                          </label>
-                          <p className="text-sm text-gray-600 mt-1">
-                            📦 6-8 business days • ₹149 shipping fee
                           </p>
                         </div>
                       </div>
